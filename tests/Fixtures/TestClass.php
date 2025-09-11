@@ -4,9 +4,14 @@ namespace Tests\Fixtures;
 
 class TestClass
 {
-    public function doSomething(): void
+    public function doSomething(...$arguments): void
     {
-        TestAction::make()->execute();
+        TestAction::make()->execute(...$arguments);
+    }
+
+    public function doSomethingWithArgs(...$arguments): void
+    {
+        TestActionWithArgs::make()->execute(...$arguments);
     }
 
     public function doSomethingConditionally(bool $shouldExecuteAction = true): void

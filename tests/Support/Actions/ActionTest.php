@@ -40,6 +40,17 @@ class ActionTest extends TestCase
     }
 
     #[Test]
+    public function itCanAssertExecuteIsCalledAndReturnData(): void
+    {
+        TestActionWithArgs::shouldExecute()
+            ->withArgs(['bar'])
+            ->once()
+            ->andReturn('bar');
+
+        (new TestClass)->doSomethingWithArgs('bar');
+    }
+
+    #[Test]
     public function itCanAssertExecuteIsNotCalled(): void
     {
         TestAction::shouldExecute()
