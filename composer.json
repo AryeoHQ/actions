@@ -1,0 +1,84 @@
+{
+    "name": "aryeo/actions",
+    "description": "An actions package.",
+    "keywords": [
+        "Aryeo",
+        "laravel",
+        "actions"
+    ],
+    "homepage": "https://github.com/aryeohq/actions",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Justin Seliga",
+            "email": "justinsel@zillowgroup.com"
+        },
+        {
+            "name": "Rob Fonseca",
+            "email": "robfo@zillowgroup.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "laravel/framework": "^12.0",
+        "mockery/mockery": "^1.6"
+    },
+    "require-dev": {
+        "aryeohq/phpstan-rules": "^1.1",
+        "brianium/paratest": "^7.0",
+        "canvural/larastan-strict-rules": "^3.0||^2.0",
+        "ergebnis/phpstan-rules": "^2.8",
+        "larastan/larastan": "^2.9||^3.0",
+        "laravel/pint": "^1.14",
+        "nikic/php-parser": "^5.6",
+        "orchestra/testbench": "^10.0.0||^9.0.0",
+        "orchestra/testbench-core": "^10.0.0||^9.0.0",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-deprecation-rules": "^1.1||^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^12||^11",
+        "rector/rector": "^2.2",
+        "shipmonk/composer-dependency-analyser": "^1.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "Support\\": "src/Support/",
+            "Tooling\\": "src/Tooling/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Support\\Actions\\Providers\\ActionServiceProvider"
+            ]
+        },
+        "tooling": {
+            "phpstan": {
+                "rules": [
+                    "Tooling\\PHPStan\\Rules\\ActionRule"
+                ]
+            },
+            "rector": {
+                "rules": [
+                    "Tooling\\Rector\\Rules\\AddContractAndTraitForActions"
+                ]
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
