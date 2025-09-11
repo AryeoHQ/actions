@@ -1,0 +1,29 @@
+<?php
+
+namespace DummyNamespace;
+
+use Support\Actions\Concerns\AsAction;
+use Support\Actions\Contracts\Action;
+
+class DummyClass implements Action
+{
+    use AsAction;
+
+    /**
+     * Create a new action instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        // Prepare the action for execution, leveraging constructor injection.
+    }
+
+    /**
+     * Execute the action.
+     */
+    public function execute()
+    {
+        // The business logic goes here.
+    }
+}

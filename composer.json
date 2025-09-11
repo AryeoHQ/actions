@@ -1,0 +1,44 @@
+{
+    "name": "aryeo/actions",
+    "description": "An actions package.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Support\\": "src/Support/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Justin Seliga",
+            "email": "justinsel@zillowgroup.com"
+        },
+        {
+            "name": "Rob Fonseca",
+            "email": "robfo@zillowgroup.com"
+        }
+    ],
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    },
+    "minimum-stability": "stable",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Support\\Actions\\Providers\\ActionServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "laravel/framework": "^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.6"
+    }
+}
