@@ -1,18 +1,14 @@
 {
     "name": "aryeo/actions",
     "description": "An actions package.",
+    "keywords": [
+        "Aryeo",
+        "laravel",
+        "actions"
+    ],
+    "homepage": "https://github.com/aryeohq/actions",
     "type": "library",
     "license": "MIT",
-    "autoload": {
-        "psr-4": {
-            "Support\\": "src/Support/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Tests\\": "tests/"
-        }
-    },
     "authors": [
         {
             "name": "Justin Seliga",
@@ -23,11 +19,37 @@
             "email": "robfo@zillowgroup.com"
         }
     ],
+    "require": {
+        "php": "^8.3||^8.4",
+        "laravel/framework": "^12.0"
+    },
+    "require-dev": {
+        "brianium/paratest": "^7.0",
+        "larastan/larastan": "^2.9||^3.0",
+        "laravel/pint": "^1.14",
+        "orchestra/testbench": "^10.6",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-deprecation-rules": "^1.1||^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Support\\": "src/Support/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
     "scripts": {
         "test": "vendor/bin/phpunit",
         "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
     },
-    "minimum-stability": "stable",
+    "config": {
+        "sort-packages": true
+    },
     "extra": {
         "laravel": {
             "providers": [
@@ -35,10 +57,6 @@
             ]
         }
     },
-    "require": {
-        "laravel/framework": "^12.0"
-    },
-    "require-dev": {
-        "orchestra/testbench": "^10.6"
-    }
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }

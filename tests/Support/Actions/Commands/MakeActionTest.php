@@ -22,7 +22,7 @@ class MakeActionTest extends TestCase
     {
         $this->artisan(MakeAction::class, ['name' => 'TestAction']);
 
-        $this->assertFileExists(app_path('Actions/TestAction.php'));
+        $this->assertFileExists(app_path('Actions/TestAction.php'), 'The action was not created');
     }
 
     #[Test]
@@ -31,8 +31,9 @@ class MakeActionTest extends TestCase
         $this->artisan(MakeAction::class, ['name' => 'TestAction']);
 
         $actionClass = file_get_contents(app_path('Actions/TestAction.php'));
-        $this->assertStringContainsString( 'use Support\Actions\Contracts\Action;', $actionClass);
-        $this->assertStringContainsString( 'implements Action', $actionClass);
-        $this->assertStringContainsString( 'use AsAction;', $actionClass);
+        $this->assertStringContainsString( 'final class TestAction', $actionClass, 'The action does not define the class as final');
+        $this->assertStringContainsString( 'use Support\Actions\Contracts\Action;', $actionClass, 'The action does not import the Action interface');
+        $this->assertStringContainsString( 'implements Action', $actionClass, 'The action does not implement the Action interface');
+        $this->assertStringContainsString( 'use AsAction;', $actionClass, 'The action does not use the AsAction trait');
     }
 }

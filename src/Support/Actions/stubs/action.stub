@@ -5,7 +5,7 @@ namespace DummyNamespace;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 
-class DummyClass implements Action
+final class DummyClass implements Action
 {
     use AsAction;
 
