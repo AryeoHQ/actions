@@ -6,7 +6,6 @@ namespace Tests\Support\Actions\PHPStan\Rules;
 
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
-use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Support\Actions\PHPStan\Rules\ActionRule;
 
@@ -23,14 +22,12 @@ class ActionRuleTest extends RuleTestCase
         return __DIR__ . '/../../../../Fixtures/PHPStan/' . $filename;
     }
 
-    #[Test]
-    public function itPassesValidActionClass(): void
+    public function test_it_passes_valid_action_class(): void
     {
         $this->analyse([$this->getFixturePath('ValidAction.php')], []);
     }
 
-    #[Test]
-    public function itFailsActionClassNotFinal(): void
+    public function test_it_fails_action_class_not_final(): void
     {
         $this->analyse([$this->getFixturePath('NotFinalAction.php')], [
             [
@@ -40,8 +37,7 @@ class ActionRuleTest extends RuleTestCase
         ]);
     }
 
-    #[Test]
-    public function itFailsActionClassMissingExecuteMethod(): void
+    public function test_it_fails_action_class_missing_execute_method(): void
     {
         $this->analyse([$this->getFixturePath('MissingExecuteMethodAction.php')], [
             [
@@ -51,8 +47,7 @@ class ActionRuleTest extends RuleTestCase
         ]);
     }
 
-    #[Test]
-    public function itFailsActionClassMissingAsActionTrait(): void
+    public function test_it_fails_action_class_missing_as_action_trait(): void
     {
         $this->analyse([$this->getFixturePath('MissingAsActionTraitAction.php')], [
             [
@@ -62,8 +57,7 @@ class ActionRuleTest extends RuleTestCase
         ]);
     }
 
-    #[Test]
-    public function itFailsActionClassMissingAllRequirements(): void
+    public function test_it_fails_action_class_missing_all_requirements(): void
     {
         $this->analyse([$this->getFixturePath('MissingAllRequirementsAction.php')], [
             [
@@ -81,14 +75,12 @@ class ActionRuleTest extends RuleTestCase
         ]);
     }
 
-    #[Test]
-    public function itIgnoresNonActionClass(): void
+    public function test_it_ignores_non_action_class(): void
     {
         $this->analyse([$this->getFixturePath('NonActionClass.php')], []);
     }
 
-    #[Test]
-    public function itPassesActionClassWithAllRequirements(): void
+    public function test_it_passes_action_class_with_all_requirements(): void
     {
         $this->analyse([$this->getFixturePath('CompleteAction.php')], []);
     }

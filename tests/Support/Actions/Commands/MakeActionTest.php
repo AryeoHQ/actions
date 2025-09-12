@@ -3,7 +3,6 @@
 namespace Tests\Support\Actions\Commands;
 
 use Tests\TestCase;
-use PHPUnit\Framework\Attributes\Test;
 use Illuminate\Console\GeneratorCommand;
 use Support\Actions\Commands\MakeAction;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -11,22 +10,19 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(MakeAction::class)]
 class MakeActionTest extends TestCase
 {
-    #[Test]
-    public function commanIsInstanceOfGeneratorCommand(): void
+    public function test_command_is_instance_of_generator_command(): void
     {
         $this->assertInstanceOf(GeneratorCommand::class, app(MakeAction::class));
     }
 
-    #[Test]
-    public function itCanMakeAnAction(): void
+    public function test_it_can_make_an_action(): void
     {
         $this->artisan(MakeAction::class, ['name' => 'TestAction']);
 
         $this->assertFileExists(app_path('Actions/TestAction.php'), 'The action was not created');
     }
 
-    #[Test]
-    public function itActionIncludesAsActionTraitAndImplementsActionInterface(): void
+    public function test_it_action_includes_as_action_trait_and_implements_action_interface(): void
     {
         $this->artisan(MakeAction::class, ['name' => 'TestAction']);
 
