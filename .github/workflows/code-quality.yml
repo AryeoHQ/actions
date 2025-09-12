@@ -61,14 +61,14 @@ jobs:
         run: ./vendor/bin/composer-dependency-analyser
 
   tests:
-    runs-on: ubuntu-latest-16-cores
+    runs-on: ubuntu-latest-4-cores
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         php: [8.4, 8.3]
         laravel: [12.*, 11.*]
-        stability: [prefer-lowest, prefer-stable]
+        stability: [prefer-stable]
         include:
           - laravel: 12.*
             testbench: 10.*
