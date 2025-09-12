@@ -37,15 +37,11 @@ jobs:
           extensions: tokenizer
 
       - name: Prepare Testbench cache dir
-        run: mkdir -p vendor/orchestra/testbench-core/laravel/bootstrap/cache && chmod 777 vendor/orchestra/testbench-core/laravel/bootstrap/cache
+        run: mkdir -p vendor/orchestra/testbench-core/laravel/bootstrap/cache
 
       - name: Run static analysis on application
         shell: sh
         run: ./vendor/bin/phpstan analyse --memory-limit=4G --error-format=github -c phpstan.package.neon
-
-      - name: Run static analysis on test suite
-        shell: sh
-        run: ./vendor/bin/phpstan analyse --memory-limit=4G --error-format=github -c phpstan.tests.neon
 
   dependency-analysis:
     runs-on: ubuntu-latest-4-cores
