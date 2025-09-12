@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Support\Actions\Concerns;
 
-use Mockery;
-use ReflectionMethod;
-use Mockery\MockInterface;
 use Illuminate\Support\Fluent;
-use Mockery\HigherOrderMessage;
+use Mockery;
 use Mockery\ExpectationInterface;
+use Mockery\HigherOrderMessage;
+use Mockery\MockInterface;
 
 trait AsAction
 {
@@ -33,13 +32,14 @@ trait AsAction
     public function executeIf(bool $shouldExecute, mixed ...$arguments): mixed
     {
         if ($shouldExecute) {
-            /** 
-             * The ignore is here to allow for void to be a return type 
+            /**
+             * The ignore is here to allow for void to be a return type
+             *
              * @phpstan-ignore-next-line
              */
             return $this->execute(...$arguments);
         }
-        
+
         return new Fluent;
     }
 

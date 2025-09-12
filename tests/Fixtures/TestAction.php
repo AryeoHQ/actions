@@ -9,7 +9,8 @@ class TestAction implements Action
 {
     use AsAction;
 
-    public function execute() {
+    public function execute()
+    {
         return null;
     }
 }

@@ -67,17 +67,22 @@ Fluent testing helpers are provided to mock and assert action execution.
 
 1. Asserting the action executes
 ```php
-MyAction::shouldExecute()->once();
+MyAction::shouldExecute()
+    ->once();
 ```
 
 2. Asserting the action doesn't execute
 ```php
-MyAction::shouldExecute()->never();
+MyAction::shouldExecute()
+    ->never();
 ```
 
 3. Asserting the action accepts args and returns data
 ```php
-MyAction::shouldExecute()>withArgs(['foor'])->once()->andReturns('bar');
+MyAction::shouldExecute()
+    ->withArgs(['foor'])
+    ->once()
+    ->andReturns('bar');
 ```
 
 ## Static Analysis
