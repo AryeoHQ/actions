@@ -2,10 +2,10 @@
 
 namespace Tests\Support\Actions\Commands;
 
-use Tests\TestCase;
 use Illuminate\Console\GeneratorCommand;
-use Support\Actions\Commands\MakeAction;
 use PHPUnit\Framework\Attributes\CoversClass;
+use Support\Actions\Commands\MakeAction;
+use Tests\TestCase;
 
 #[CoversClass(MakeAction::class)]
 class MakeActionTest extends TestCase
@@ -27,9 +27,9 @@ class MakeActionTest extends TestCase
         $this->artisan(MakeAction::class, ['name' => 'TestAction']);
 
         $actionClass = file_get_contents(app_path('Actions/TestAction.php'));
-        $this->assertStringContainsString( 'final class TestAction', $actionClass, 'The action does not define the class as final');
-        $this->assertStringContainsString( 'use Support\Actions\Contracts\Action;', $actionClass, 'The action does not import the Action interface');
-        $this->assertStringContainsString( 'implements Action', $actionClass, 'The action does not implement the Action interface');
-        $this->assertStringContainsString( 'use AsAction;', $actionClass, 'The action does not use the AsAction trait');
+        $this->assertStringContainsString('final class TestAction', $actionClass, 'The action does not define the class as final');
+        $this->assertStringContainsString('use Support\Actions\Contracts\Action;', $actionClass, 'The action does not import the Action interface');
+        $this->assertStringContainsString('implements Action', $actionClass, 'The action does not implement the Action interface');
+        $this->assertStringContainsString('use AsAction;', $actionClass, 'The action does not use the AsAction trait');
     }
 }

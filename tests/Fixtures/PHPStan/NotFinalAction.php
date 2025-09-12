@@ -2,8 +2,8 @@
 
 namespace Tests\Fixtures\PHPStan;
 
-use Support\Actions\Contracts\Action;
 use Support\Actions\Concerns\AsAction;
+use Support\Actions\Contracts\Action;
 
 class NotFinalAction implements Action
 {

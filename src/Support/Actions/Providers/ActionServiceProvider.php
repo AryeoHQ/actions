@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Support\Actions\Providers;
 
+use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 use Support\Actions\Commands\MakeAction;
-use Illuminate\Contracts\Support\DeferrableProvider;
 
 class ActionServiceProvider extends ServiceProvider implements DeferrableProvider
 {
@@ -17,6 +19,9 @@ class ActionServiceProvider extends ServiceProvider implements DeferrableProvide
         }
     }
 
+    /**
+     * @return array<string>
+     */
     public function provides(): array
     {
         return [

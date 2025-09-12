@@ -88,5 +88,5 @@ The rule can be added to your projects `phpstan.neon` to the `rules` key.
 
 ```yml
 rules:
-	- Support\Actions\PHPStan\Rules\ActionRule
+    - Support\Actions\PHPStan\Rules\ActionRule
 ```

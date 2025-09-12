@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Support\Actions\Concerns;
 
+use Illuminate\Support\Fluent;
 use Mockery;
 use Mockery\Expectation;
-use Mockery\MockInterface;
-use Illuminate\Support\Fluent;
 use Mockery\ExpectationInterface;
+use Mockery\MockInterface;
 
 trait AsAction
 {
@@ -31,15 +33,11 @@ trait AsAction
 
     /**
      * Execute the action if the condition is true.
-     *
-     * @param bool $shouldExecute
-     * @param mixed ...$arguments
-     * @return mixed
      */
     public function executeIf(bool $shouldExecute, mixed ...$arguments): mixed
     {
         return $shouldExecute
-            ? $this->execute(...$arguments) 
+            ? $this->execute(...$arguments)
             : new Fluent;
     }
 

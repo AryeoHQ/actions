@@ -2,11 +2,11 @@
 
 namespace Tests\Support\Actions;
 
-use Tests\TestCase;
-use Tests\Fixtures\TestClass;
 use Illuminate\Support\Fluent;
 use Tests\Fixtures\TestAction;
 use Tests\Fixtures\TestActionWithArgs;
+use Tests\Fixtures\TestClass;
+use Tests\TestCase;
 
 class ActionTest extends TestCase
 {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Support\Actions\Commands;
 
 use Illuminate\Console\GeneratorCommand;
@@ -14,7 +16,7 @@ class MakeAction extends GeneratorCommand
 
     protected function getStub(): string
     {
-        return __DIR__ . '/../stubs/action.stub';
+        return __DIR__.'/../stubs/action.stub';
     }
 
     protected function getDefaultNamespace($rootNamespace): string
@@ -22,6 +24,9 @@ class MakeAction extends GeneratorCommand
         return $rootNamespace.'\Actions';
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function getOptions(): array
     {
         return [];

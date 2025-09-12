@@ -14,12 +14,12 @@ class ActionRuleTest extends RuleTestCase
 {
     protected function getRule(): Rule
     {
-        return new ActionRule();
+        return new ActionRule;
     }
 
     private function getFixturePath(string $filename): string
     {
-        return __DIR__ . '/../../../../Fixtures/PHPStan/' . $filename;
+        return __DIR__.'/../../../../Fixtures/PHPStan/'.$filename;
     }
 
     public function test_it_passes_valid_action_class(): void
