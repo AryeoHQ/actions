@@ -4,27 +4,22 @@ declare(strict_types=1);
 
 namespace Support\Actions\Concerns;
 
-use Illuminate\Support\Fluent;
 use Mockery;
-use Mockery\Expectation;
-use Mockery\ExpectationInterface;
 use Mockery\MockInterface;
+use Illuminate\Support\Fluent;
+use Mockery\HigherOrderMessage;
+use Mockery\ExpectationInterface;
 
 trait AsAction
 {
     public static function make(): static
     {
+        /** @var static */
         return app(static::class);
     }
 
     public static function mock(): MockInterface
     {
-        $instance = static::make();
-
-        if ($instance instanceof MockInterface) {
-            return $instance;
-        }
-
         return tap(
             Mockery::getContainer()->mock(static::class),
             fn ($instance) => app()->instance(static::class, $instance)
@@ -41,7 +36,7 @@ trait AsAction
             : new Fluent;
     }
 
-    public static function shouldExecute(): ExpectationInterface|Expectation
+    public static function shouldExecute(): ExpectationInterface|HigherOrderMessage
     {
         return static::mock()->makePartial()->shouldReceive('execute');
     }

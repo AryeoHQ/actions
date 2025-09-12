@@ -9,6 +9,7 @@ use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\Rule;
+use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\RuleErrorBuilder;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
@@ -25,7 +26,7 @@ final class ActionRule implements Rule
 
     /**
      * @param  Class_  $node
-     * @return list<\PHPStan\Rules\RuleError>
+     * @return list<IdentifierRuleError>
      */
     public function processNode(Node $node, Scope $scope): array
     {
@@ -38,18 +39,21 @@ final class ActionRule implements Rule
         if (! $node->isFinal()) {
             $errors[] = RuleErrorBuilder::message('Action classes must be final.')
                 ->line($node->getStartLine())
+                ->identifier('actions.final')
                 ->build();
         }
 
         if (! $this->hasExecuteMethod($node)) {
             $errors[] = RuleErrorBuilder::message('Action classes must implement the execute() method.')
                 ->line($node->getStartLine())
+                ->identifier('actions.execute')
                 ->build();
         }
 
         if (! $this->usesAsActionTrait($node)) {
             $errors[] = RuleErrorBuilder::message('Action classes must use the Support\Actions\Concerns\AsAction trait.')
                 ->line($node->getStartLine())
+                ->identifier('actions.trait')
                 ->build();
         }
 

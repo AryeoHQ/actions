@@ -32,7 +32,7 @@ class ActionRuleTest extends RuleTestCase
         $this->analyse([$this->getFixturePath('NotFinalAction.php')], [
             [
                 'Action classes must be final.',
-                8,
+                10,
             ],
         ]);
     }
@@ -42,7 +42,7 @@ class ActionRuleTest extends RuleTestCase
         $this->analyse([$this->getFixturePath('MissingExecuteMethodAction.php')], [
             [
                 'Action classes must implement the execute() method.',
-                8,
+                10,
             ],
         ]);
     }
@@ -52,7 +52,7 @@ class ActionRuleTest extends RuleTestCase
         $this->analyse([$this->getFixturePath('MissingAsActionTraitAction.php')], [
             [
                 'Action classes must use the Support\Actions\Concerns\AsAction trait.',
-                7,
+                9,
             ],
         ]);
     }
@@ -62,15 +62,15 @@ class ActionRuleTest extends RuleTestCase
         $this->analyse([$this->getFixturePath('MissingAllRequirementsAction.php')], [
             [
                 'Action classes must be final.',
-                7,
+                9,
             ],
             [
                 'Action classes must implement the execute() method.',
-                7,
+                9,
             ],
             [
                 'Action classes must use the Support\Actions\Concerns\AsAction trait.',
-                7,
+                9,
             ],
         ]);
     }
