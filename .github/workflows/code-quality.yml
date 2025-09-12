@@ -37,7 +37,7 @@ jobs:
           extensions: tokenizer
 
       - name: Prepare Testbench cache dir
-        run: mkdir -p vendor/orchestra/testbench-core/laravel/bootstrap/cache
+        run: mkdir -p vendor/orchestra/testbench-core/laravel/bootstrap/cache && chmod 777 vendor/orchestra/testbench-core/laravel/bootstrap/cache
 
       - name: Run static analysis on application
         shell: sh
