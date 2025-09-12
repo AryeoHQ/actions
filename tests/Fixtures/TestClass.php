@@ -17,7 +17,7 @@ class TestClass
     public function doSomethingConditionally(bool $shouldExecuteAction = true): void
     {
         if ($shouldExecuteAction) {
-            TestAction::make()->execute($shouldExecuteAction);
+            TestAction::make()->execute();
         }
     }
 

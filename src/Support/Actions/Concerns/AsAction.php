@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Support\Actions\Concerns;
 
 use Mockery;
+use ReflectionMethod;
 use Mockery\MockInterface;
 use Illuminate\Support\Fluent;
 use Mockery\HigherOrderMessage;
@@ -31,9 +32,15 @@ trait AsAction
      */
     public function executeIf(bool $shouldExecute, mixed ...$arguments): mixed
     {
-        return $shouldExecute
-            ? $this->execute(...$arguments)
-            : new Fluent;
+        if ($shouldExecute) {
+            /** 
+             * The ignore is here to allow for void to be a return type 
+             * @phpstan-ignore-next-line
+             */
+            return $this->execute(...$arguments);
+        }
+        
+        return new Fluent;
     }
 
     public static function shouldExecute(): ExpectationInterface|HigherOrderMessage

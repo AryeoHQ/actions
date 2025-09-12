@@ -11,8 +11,8 @@ final class ValidAction implements Action
 {
     use AsAction;
 
-    public function execute(): void
+    public function execute()
     {
-        // Implementation
+        return null;
     }
 }
