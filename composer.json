@@ -1,0 +1,75 @@
+{
+    "name": "aryeo/actions",
+    "description": "An actions package.",
+    "keywords": [
+        "Aryeo",
+        "laravel",
+        "actions"
+    ],
+    "homepage": "https://github.com/aryeohq/actions",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rob Fonseca",
+            "email": "robfo@zillowgroup.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "laravel/framework": "^12.0",
+        "mockery/mockery": "^1.6",
+        "symfony/console": "^7.3"
+    },
+    "require-dev": {
+        "aryeo/tooling-laravel": "dev-version-1",
+        "brianium/paratest": "^7.0",
+        "nikic/php-parser": "^5.6",
+        "orchestra/testbench": "^10.0.0||^9.0.0",
+        "orchestra/testbench-core": "^10.0.0||^9.0.0",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^12||^11"
+    },
+    "repositories": {
+        "tooling-laravel": {
+            "type": "vcs",
+            "url": "https://github.com/AryeoHQ/tooling-laravel"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Support\\": "src/Support/",
+            "Tooling\\": "src/Tooling/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "aryeo/tooling-laravel": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Support\\Actions\\Providers\\ActionServiceProvider"
+            ]
+        },
+        "tooling": {
+            "phpstan": "tooling/phpstan/rules.neon",
+            "rector": {
+                "rules": "tooling/rector/rules.php"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

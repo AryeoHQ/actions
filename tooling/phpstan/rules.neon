@@ -1,0 +1,5 @@
+services:
+    -
+        class: Tooling\Actions\PHPStan\Rules\ActionRule
+        tags:
+            - phpstan.rules.rule
