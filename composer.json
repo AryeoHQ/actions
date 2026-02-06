@@ -64,6 +64,7 @@
             ]
         },
         "tooling": {
+            "phpstan": "tooling/phpstan/rules.neon",
             "rector": {
                 "rules": "tooling/rector/rules.php"
             }
