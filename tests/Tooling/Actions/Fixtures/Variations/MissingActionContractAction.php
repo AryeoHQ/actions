@@ -10,7 +10,7 @@ final class MissingActionContractAction
 {
     use AsAction;
 
-    public function execute(): void
+    public function now(): void
     {
         // Implementation
     }

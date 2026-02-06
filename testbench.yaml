@@ -1,4 +1,4 @@
 env:
-  - PHPSTAN_PATHS=src
-  - RECTOR_PATHS=src,tests/Support,tests/Tooling
-  - PINT_PATHS=src
+  - PHPSTAN_PATHS=src,tests/Fixtures,tests/Support,tests/Tooling/Actions/PhpStan,tests/Tooling/Actions/Rector
+  - RECTOR_PATHS=src,tests/Fixtures
+  - PINT_PATHS=src,tests

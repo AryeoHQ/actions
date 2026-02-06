@@ -1,5 +1,35 @@
 services:
     -
-        class: Tooling\Actions\PHPStan\Rules\ActionRule
+        class: Tooling\Actions\PhpStan\Rules\ActionMustBeFinal
         tags:
             - phpstan.rules.rule
+    -
+        class: Tooling\Actions\PhpStan\Rules\ActionMustDefineHandleMethod
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\Actions\PhpStan\Rules\ActionMustUseAsAction
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\Actions\PhpStan\Rules\AsActionMustImplementAction
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\Actions\PhpStan\Rules\ActionMustImplementShouldQueue
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\Actions\PhpStan\Rules\ShouldQueueMustImplementAction
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\Actions\PhpStan\Rules\ActionCannotUseDispatchable
+        tags:
+            - phpstan.rules.rule
+
+parameters:
+    ignoreErrors:
+        # Mockery's andReturnUsing is not properly recognized by PHPStan
+        -
+            message: '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::andReturnUsing\(\)#'

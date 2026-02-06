@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tooling\Actions\Rector\Rules;
 
-use PhpParser\Modifiers;
 use PhpParser\Node;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
@@ -17,7 +16,7 @@ use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 use Throwable;
 
-class AddContractAndTraitForActions extends AbstractRector
+class AddAsActionToAction extends AbstractRector
 {
     public function __construct(
         private UseNodesToAddCollector $useNodesToAddCollector
@@ -34,32 +33,18 @@ class AddContractAndTraitForActions extends AbstractRector
             return null;
         }
 
-        $hasChanges = false;
         $implementsAction = $this->implementsActionContract($node);
         $usesAsAction = $this->usesAsActionTrait($node);
 
-        // Rule 1: If AsAction trait is used, add Action contract if missing
-        if ($usesAsAction && ! $implementsAction) {
-            $node = $this->addActionContract($node);
-            $hasChanges = true;
-        }
-
-        // Rule 2: If Action contract is implemented, add AsAction trait if missing
+        // If Action contract is implemented, add AsAction trait if missing
         if ($implementsAction && ! $usesAsAction) {
-            $node = $this->addAsActionTrait($node);
-            $hasChanges = true;
+            return $this->addAsActionTrait($node);
         }
 
-        // Rule 3: If class implements Action or uses AsAction, ensure it's final
-        if (($implementsAction || $usesAsAction) && ! $node->isFinal()) {
-            $node->flags |= Modifiers::FINAL;
-            $hasChanges = true;
-        }
-
-        return $hasChanges ? $node : null;
+        return null;
     }
 
-    public function implementsActionContract(Class_ $node): bool
+    private function implementsActionContract(Class_ $node): bool
     {
         if ($node->implements === []) {
             return false;
@@ -78,7 +63,7 @@ class AddContractAndTraitForActions extends AbstractRector
         return false;
     }
 
-    public function usesAsActionTrait(Class_ $node): bool
+    private function usesAsActionTrait(Class_ $node): bool
     {
         if ($node->stmts === []) {
             return false;
@@ -99,35 +84,6 @@ class AddContractAndTraitForActions extends AbstractRector
         }
 
         return false;
-    }
-
-    public function addActionContract(Class_ $node): Class_
-    {
-        // Check if contract is already implemented
-        if ($this->implementsActionContract($node)) {
-            return $node;
-        }
-
-        // Add use statement for Action contract
-        // Only add use import if we have a current file context (not in tests)
-        try {
-            $this->useNodesToAddCollector->addUseImport(
-                new FullyQualifiedObjectType(Action::class)
-            );
-        } catch (Throwable $e) {
-            // In test environments, UseNodesToAddCollector might not have a current file
-            // This is expected and we can continue without adding the use statement
-        }
-
-        $actionInterface = new Name('Action');
-
-        if ($node->implements === []) {
-            $node->implements = [$actionInterface];
-        } else {
-            $node->implements[] = $actionInterface;
-        }
-
-        return $node;
     }
 
     private function addAsActionTrait(Class_ $node): Class_

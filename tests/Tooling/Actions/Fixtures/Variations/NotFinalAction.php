@@ -1,15 +1,17 @@
 <?php
 
-namespace Tests\Fixtures;
+declare(strict_types=1);
+
+namespace Tests\Fixtures\Variations;
 
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 
-class TestAction implements Action
+class NotFinalAction implements Action
 {
     use AsAction;
 
-    public function execute()
+    public function handle()
     {
         return null;
     }

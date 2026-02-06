@@ -7,11 +7,11 @@ namespace Tests\Fixtures\Variations;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 
-class NotFinalAction implements Action
+final class ValidAction implements Action
 {
     use AsAction;
 
-    public function execute()
+    public function handle()
     {
         return null;
     }

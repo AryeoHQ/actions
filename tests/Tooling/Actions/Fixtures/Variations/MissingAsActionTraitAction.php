@@ -8,12 +8,12 @@ use Support\Actions\Contracts\Action;
 
 final class MissingAsActionTraitAction implements Action
 {
-    public static function make(): static
+    public static function make(mixed ...$arguments): static
     {
         return new self;
     }
 
-    public function execute(): void
+    public function handle(): void
     {
         // Implementation
     }
