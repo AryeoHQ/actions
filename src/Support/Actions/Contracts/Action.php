@@ -6,5 +6,5 @@ namespace Support\Actions\Contracts;
 
 interface Action
 {
-    public static function make(): static;
+    public static function make(mixed ...$arguments): static;
 }

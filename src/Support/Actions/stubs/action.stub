@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace DummyNamespace;
 
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 
-final class DummyClass implements Action
+final class DummyClass implements Action, ShouldQueue
 {
     use AsAction;
 
@@ -22,9 +23,12 @@ final class DummyClass implements Action
     }
 
     /**
-     * Execute the action.
+     * Handle the action.
+     *
+     * This method is called by the dispatcher. Never call it directly.
+     * Use now() for synchronous execution or dispatch() for asynchronous execution.
      */
-    public function execute()
+    public function handle()
     {
         // The business logic goes here.
     }
