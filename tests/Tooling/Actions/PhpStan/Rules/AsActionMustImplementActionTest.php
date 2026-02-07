@@ -35,7 +35,7 @@ class AsActionMustImplementActionTest extends RuleTestCase
         $this->analyse([$this->getFixturePath('MissingActionContractAction.php')], [
             [
                 '`AsAction` trait requires `Action` contract.',
-                9,
+                11,
             ],
         ]);
     }

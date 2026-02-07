@@ -30,7 +30,9 @@ final class AsActionMustImplementAction implements Rule
      */
     public function processNode(Node $node, Scope $scope): array
     {
-        if (! $this->usesAsActionTrait($node)) {
+        $traitLine = $this->getAsActionTraitLine($node);
+
+        if ($traitLine === null) {
             return [];
         }
 
@@ -40,16 +42,16 @@ final class AsActionMustImplementAction implements Rule
 
         return [
             RuleErrorBuilder::message('`AsAction` trait requires `Action` contract.')
-                ->line($node->getStartLine())
+                ->line($traitLine)
                 ->identifier('actions.interface')
                 ->build(),
         ];
     }
 
-    private function usesAsActionTrait(Class_ $node): bool
+    private function getAsActionTraitLine(Class_ $node): null|int
     {
         if ($node->stmts === []) {
-            return false;
+            return null;
         }
 
         foreach ($node->stmts as $stmt) {
@@ -57,14 +59,14 @@ final class AsActionMustImplementAction implements Rule
                 foreach ($stmt->traits as $trait) {
                     if ($trait instanceof FullyQualified) {
                         if ($trait->toString() === AsAction::class) {
-                            return true;
+                            return $stmt->getStartLine();
                         }
                     }
                 }
             }
         }
 
-        return false;
+        return null;
     }
 
     private function implementsActionContract(Class_ $node): bool
