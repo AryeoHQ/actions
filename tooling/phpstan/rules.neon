@@ -23,14 +23,6 @@ services:
         class: Tooling\Actions\PhpStan\Rules\ActionCannotUseQueueable
         tags:
             - phpstan.rules.rule
-    -
-        class: Tooling\Actions\PhpStan\Rules\AsActionCannotUseDispatchable
-        tags:
-            - phpstan.rules.rule
-    -
-        class: Tooling\Actions\PhpStan\Rules\AsActionCannotUseQueueable
-        tags:
-            - phpstan.rules.rule
 
 parameters:
     ignoreErrors:
