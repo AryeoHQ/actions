@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Tooling\Actions\PhpStan\Rules;
 
+use Illuminate\Foundation\Bus\Dispatchable;
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -37,7 +38,7 @@ class ActionCannotUseDispatchableTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('ActionWithDispatchable.php')], [
             [
-                '`Action` instances cannot use the `Illuminate\Foundation\Bus\Dispatchable` trait.',
+                '`Action` instances cannot use the `' . Dispatchable::class . '` trait.',
                 14,
             ],
         ]);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Tooling\Actions\PhpStan\Rules;
 
+use Illuminate\Foundation\Queue\Queueable;
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -37,7 +38,7 @@ class ActionCannotUseQueueableTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('ActionWithQueueable.php')], [
             [
-                '`Action` instances cannot use the `Illuminate\Foundation\Queue\Queueable` trait.',
+                '`Action` instances cannot use the `' . Queueable::class . '` trait.',
                 14,
             ],
         ]);

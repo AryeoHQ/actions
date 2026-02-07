@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Tooling\Actions\PhpStan\Rules;
 
+use Illuminate\Foundation\Bus\Dispatchable;
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -36,7 +37,7 @@ class AsActionCannotUseDispatchableTest extends RuleTestCase
     {
         $this->analyse([$this->getVariationFixturePath('AsActionWithDispatchable.php')], [
             [
-                '`AsAction` trait cannot use the `Illuminate\Foundation\Bus\Dispatchable` trait.',
+                '`AsAction` trait cannot use the `' . Dispatchable::class . '` trait.',
                 12,
             ],
         ]);
@@ -46,7 +47,7 @@ class AsActionCannotUseDispatchableTest extends RuleTestCase
     public function it_passes_when_as_action_uses_local_dispatchable_trait(): void
     {
         // AsAction uses the local Support\Actions\Concerns\Dispatchable trait,
-        // not Illuminate\Foundation\Bus\Dispatchable, so it should pass
+        // not the Illuminate one, so it should pass
         $this->analyse([$this->getFixturePath('AsAction.php')], []);
     }
 }
