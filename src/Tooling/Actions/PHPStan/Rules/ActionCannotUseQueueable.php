@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Tooling\Actions\PhpStan\Rules;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
 use PhpParser\Node;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\TraitUse;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
@@ -17,7 +18,7 @@ use Support\Actions\Contracts\Action;
 /**
  * @implements Rule<Class_>
  */
-final class ShouldQueueMustImplementAction implements Rule
+final class ActionCannotUseQueueable implements Rule
 {
     public function getNodeType(): string
     {
@@ -30,37 +31,22 @@ final class ShouldQueueMustImplementAction implements Rule
      */
     public function processNode(Node $node, Scope $scope): array
     {
-        if (! $this->implementsShouldQueue($node)) {
+        if (! $this->implementsActionContract($node)) {
             return [];
         }
 
-        if ($this->implementsActionContract($node)) {
+        $traitLine = $this->findQueueableTraitLine($node);
+
+        if ($traitLine === null) {
             return [];
         }
 
         return [
-            RuleErrorBuilder::message('`ShouldQueue` instances must implement `Action`.')
-                ->line($node->getStartLine())
-                ->identifier('actions.shouldQueueWithAction')
+            RuleErrorBuilder::message('`Action` instances cannot use the `Illuminate\Foundation\Queue\Queueable` trait.')
+                ->line($traitLine)
+                ->identifier('actions.queueable')
                 ->build(),
         ];
-    }
-
-    private function implementsShouldQueue(Class_ $node): bool
-    {
-        if ($node->implements === []) {
-            return false;
-        }
-
-        foreach ($node->implements as $interface) {
-            if ($interface instanceof FullyQualified) {
-                if ($interface->toString() === ShouldQueue::class) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     private function implementsActionContract(Class_ $node): bool
@@ -78,5 +64,24 @@ final class ShouldQueueMustImplementAction implements Rule
         }
 
         return false;
+    }
+
+    private function findQueueableTraitLine(Class_ $node): ?int
+    {
+        if ($node->stmts === []) {
+            return null;
+        }
+
+        foreach ($node->stmts as $stmt) {
+            if ($stmt instanceof TraitUse) {
+                foreach ($stmt->traits as $trait) {
+                    if ($trait instanceof FullyQualified && $trait->toString() === Queueable::class) {
+                        return $stmt->getStartLine();
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }

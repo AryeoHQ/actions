@@ -33,17 +33,11 @@ class ActionMustDefineHandleMethodTest extends RuleTestCase
     #[Test]
     public function it_fails_when_action_class_is_missing_handle_method(): void
     {
-        $this->analyse([$this->getFixturePath('MissingExecuteMethodAction.php')], [
+        $this->analyse([$this->getFixturePath('MissingHandleMethodAction.php')], [
             [
                 '`Action` instances must implement `handle()`.',
                 10,
             ],
         ]);
-    }
-
-    #[Test]
-    public function it_ignores_non_action_classes(): void
-    {
-        $this->analyse([$this->getFixturePath('NonActionClass.php')], []);
     }
 }

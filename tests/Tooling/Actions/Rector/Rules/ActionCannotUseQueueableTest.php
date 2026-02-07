@@ -10,19 +10,19 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Tooling\Actions\Rector\Rules\ActionMustImplementShouldQueue;
+use Tooling\Actions\Rector\Rules\ActionCannotUseQueueable;
 
-#[CoversClass(ActionMustImplementShouldQueue::class)]
-class ActionMustImplementShouldQueueTest extends TestCase
+#[CoversClass(ActionCannotUseQueueable::class)]
+class ActionCannotUseQueueableTest extends TestCase
 {
-    private ActionMustImplementShouldQueue $rule;
+    private ActionCannotUseQueueable $rule;
 
     private ParserFactory|Parser $parser;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->rule = app(ActionMustImplementShouldQueue::class);
+        $this->rule = app(ActionCannotUseQueueable::class);
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
     }
 
@@ -32,9 +32,9 @@ class ActionMustImplementShouldQueueTest extends TestCase
     }
 
     #[Test]
-    public function adds_should_queue_when_action_is_implemented(): void
+    public function removes_queueable_trait_from_action(): void
     {
-        $code = $this->getFixture('MissingAsActionTraitAction.php');
+        $code = $this->getFixture('ActionWithQueueable.php');
 
         $nodes = $this->parser->parse($code);
         $classNode = $this->getClassNode($nodes);
@@ -44,29 +44,26 @@ class ActionMustImplementShouldQueueTest extends TestCase
         $result = $this->rule->refactor($classNode);
 
         $this->assertInstanceOf(Class_::class, $result);
-        $this->assertGreaterThan(0, count($result->implements));
+
+        // Verify Queueable trait was removed
+        $hasQueueable = false;
+        foreach ($result->stmts as $stmt) {
+            if ($stmt instanceof \PhpParser\Node\Stmt\TraitUse) {
+                foreach ($stmt->traits as $trait) {
+                    if ($trait->toString() === 'Queueable') {
+                        $hasQueueable = true;
+                    }
+                }
+            }
+        }
+
+        $this->assertFalse($hasQueueable, 'Queueable trait should be removed');
     }
 
     #[Test]
-    public function adds_should_queue_to_action_without_it(): void
+    public function does_not_modify_action_without_queueable(): void
     {
-        $code = $this->getFixture('CompleteAction.php');
-
-        $nodes = $this->parser->parse($code);
-        $classNode = $this->getClassNode($nodes);
-
-        $this->assertNotNull($classNode, 'Should find a class node');
-
-        $result = $this->rule->refactor($classNode);
-
-        $this->assertInstanceOf(Class_::class, $result);
-        $this->assertGreaterThanOrEqual(2, count($result->implements));
-    }
-
-    #[Test]
-    public function does_not_modify_non_action_class(): void
-    {
-        $code = $this->getFixture('NonActionClass.php');
+        $code = $this->getFixture('ValidAction.php');
 
         $nodes = $this->parser->parse($code);
         $classNode = $this->getClassNode($nodes);

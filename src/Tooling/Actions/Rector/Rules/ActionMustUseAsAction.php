@@ -16,7 +16,7 @@ use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 use Throwable;
 
-class AddActionToAsAction extends AbstractRector
+class ActionMustUseAsAction extends AbstractRector
 {
     public function __construct(
         private UseNodesToAddCollector $useNodesToAddCollector
@@ -33,15 +33,34 @@ class AddActionToAsAction extends AbstractRector
             return null;
         }
 
-        $usesAsAction = $this->usesAsActionTrait($node);
         $implementsAction = $this->implementsActionContract($node);
+        $usesAsAction = $this->usesAsActionTrait($node);
 
-        // If AsAction trait is used, add Action contract if missing
-        if ($usesAsAction && ! $implementsAction) {
-            return $this->addActionContract($node);
+        // If Action contract is implemented, add AsAction trait if missing
+        if ($implementsAction && ! $usesAsAction) {
+            return $this->addAsActionTrait($node);
         }
 
         return null;
+    }
+
+    private function implementsActionContract(Class_ $node): bool
+    {
+        if ($node->implements === []) {
+            return false;
+        }
+
+        foreach ($node->implements as $interface) {
+            if ($interface instanceof FullyQualified && $interface->toString() === Action::class) {
+                return true;
+            }
+
+            if ($interface->toString() === 'Action') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function usesAsActionTrait(Class_ $node): bool
@@ -67,49 +86,32 @@ class AddActionToAsAction extends AbstractRector
         return false;
     }
 
-    private function implementsActionContract(Class_ $node): bool
+    private function addAsActionTrait(Class_ $node): Class_
     {
-        if ($node->implements === []) {
-            return false;
-        }
-
-        foreach ($node->implements as $interface) {
-            if ($interface instanceof FullyQualified && $interface->toString() === Action::class) {
-                return true;
-            }
-
-            if ($interface->toString() === 'Action') {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function addActionContract(Class_ $node): Class_
-    {
-        // Check if contract is already implemented
-        if ($this->implementsActionContract($node)) {
+        // Check if trait is already used
+        if ($this->usesAsActionTrait($node)) {
             return $node;
         }
 
-        // Add use statement for Action contract
+        // Add use statement for AsAction trait
         // Only add use import if we have a current file context (not in tests)
         try {
             $this->useNodesToAddCollector->addUseImport(
-                new FullyQualifiedObjectType(Action::class)
+                new FullyQualifiedObjectType(AsAction::class)
             );
         } catch (Throwable $e) {
             // In test environments, UseNodesToAddCollector might not have a current file
             // This is expected and we can continue without adding the use statement
         }
 
-        $actionInterface = new Name('Action');
+        $asActionTrait = new Name('AsAction');
+        $traitUse = new TraitUse([$asActionTrait]);
 
-        if ($node->implements === []) {
-            $node->implements = [$actionInterface];
+        // Add the trait use at the beginning of the class body
+        if ($node->stmts === []) {
+            $node->stmts = [$traitUse];
         } else {
-            $node->implements[] = $actionInterface;
+            array_unshift($node->stmts, $traitUse);
         }
 
         return $node;

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Support\Actions\Concerns;
 
-use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Bus\Queueable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 
 trait AsAction
 {
@@ -12,6 +14,8 @@ trait AsAction
     use Fakeable;
     use Nowable;
     use Queueable;
+    use InteractsWithQueue;
+    use SerializesModels;
 
     public static function make(mixed ...$arguments): static
     {

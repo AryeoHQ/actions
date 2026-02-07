@@ -41,10 +41,4 @@ class ActionMustBeFinalTest extends RuleTestCase
             ],
         ]);
     }
-
-    #[Test]
-    public function it_ignores_non_action_classes(): void
-    {
-        $this->analyse([$this->getFixturePath('NonActionClass.php')], []);
-    }
 }

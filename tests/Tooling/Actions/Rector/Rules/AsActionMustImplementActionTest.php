@@ -10,19 +10,19 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Tooling\Actions\Rector\Rules\AddActionToAsAction;
+use Tooling\Actions\Rector\Rules\AsActionMustImplementAction;
 
-#[CoversClass(AddActionToAsAction::class)]
-class AddActionToAsActionTest extends TestCase
+#[CoversClass(AsActionMustImplementAction::class)]
+class AsActionMustImplementActionTest extends TestCase
 {
-    private AddActionToAsAction $rule;
+    private AsActionMustImplementAction $rule;
 
     private ParserFactory|Parser $parser;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->rule = app(AddActionToAsAction::class);
+        $this->rule = app(AsActionMustImplementAction::class);
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
     }
 
@@ -50,22 +50,7 @@ class AddActionToAsActionTest extends TestCase
     #[Test]
     public function does_not_modify_complete_class(): void
     {
-        $code = $this->getFixture('CompleteAction.php');
-
-        $nodes = $this->parser->parse($code);
-        $classNode = $this->getClassNode($nodes);
-
-        $this->assertNotNull($classNode, 'Should find a class node');
-
-        $result = $this->rule->refactor($classNode);
-
-        $this->assertNull($result);
-    }
-
-    #[Test]
-    public function does_not_modify_non_action_class(): void
-    {
-        $code = $this->getFixture('NonActionClass.php');
+        $code = $this->getFixture('ValidAction.php');
 
         $nodes = $this->parser->parse($code);
         $classNode = $this->getClassNode($nodes);

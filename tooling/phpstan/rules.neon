@@ -16,15 +16,19 @@ services:
         tags:
             - phpstan.rules.rule
     -
-        class: Tooling\Actions\PhpStan\Rules\ActionMustImplementShouldQueue
-        tags:
-            - phpstan.rules.rule
-    -
-        class: Tooling\Actions\PhpStan\Rules\ShouldQueueMustImplementAction
-        tags:
-            - phpstan.rules.rule
-    -
         class: Tooling\Actions\PhpStan\Rules\ActionCannotUseDispatchable
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\Actions\PhpStan\Rules\ActionCannotUseQueueable
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\Actions\PhpStan\Rules\AsActionCannotUseDispatchable
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\Actions\PhpStan\Rules\AsActionCannotUseQueueable
         tags:
             - phpstan.rules.rule
 

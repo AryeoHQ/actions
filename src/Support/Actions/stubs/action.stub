@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace DummyNamespace;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 
-final class DummyClass implements Action, ShouldQueue
+final class DummyClass implements Action
 {
     use AsAction;
 

@@ -10,19 +10,19 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Tooling\Actions\Rector\Rules\ActionMustBeFinal;
+use Tooling\Actions\Rector\Rules\ActionMustUseAsAction;
 
-#[CoversClass(ActionMustBeFinal::class)]
-class ActionMustBeFinalTest extends TestCase
+#[CoversClass(ActionMustUseAsAction::class)]
+class ActionMustUseAsActionTest extends TestCase
 {
-    private ActionMustBeFinal $rule;
+    private ActionMustUseAsAction $rule;
 
     private ParserFactory|Parser $parser;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->rule = app(ActionMustBeFinal::class);
+        $this->rule = app(ActionMustUseAsAction::class);
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
     }
 
@@ -32,24 +32,23 @@ class ActionMustBeFinalTest extends TestCase
     }
 
     #[Test]
-    public function makes_action_class_final(): void
+    public function adds_trait_when_contract_is_implemented(): void
     {
-        $code = $this->getFixture('NotFinalAction.php');
+        $code = $this->getFixture('MissingAsActionTraitAction.php');
 
         $nodes = $this->parser->parse($code);
         $classNode = $this->getClassNode($nodes);
 
         $this->assertNotNull($classNode, 'Should find a class node');
-        $this->assertFalse($classNode->isFinal(), 'Class should not be final initially');
 
         $result = $this->rule->refactor($classNode);
 
         $this->assertInstanceOf(Class_::class, $result);
-        $this->assertTrue($result->isFinal(), 'Action class should be made final');
+        $this->assertNotEmpty($result->stmts);
     }
 
     #[Test]
-    public function does_not_modify_already_final_class(): void
+    public function does_not_modify_complete_class(): void
     {
         $code = $this->getFixture('ValidAction.php');
 

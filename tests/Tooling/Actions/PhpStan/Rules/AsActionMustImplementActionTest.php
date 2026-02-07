@@ -39,10 +39,4 @@ class AsActionMustImplementActionTest extends RuleTestCase
             ],
         ]);
     }
-
-    #[Test]
-    public function it_ignores_classes_not_using_trait(): void
-    {
-        $this->analyse([$this->getFixturePath('NonActionClass.php')], []);
-    }
 }

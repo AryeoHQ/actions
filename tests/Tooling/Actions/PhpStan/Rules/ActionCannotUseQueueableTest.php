@@ -8,17 +8,17 @@ use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use Tooling\Actions\PhpStan\Rules\ActionCannotUseDispatchable;
+use Tooling\Actions\PhpStan\Rules\ActionCannotUseQueueable;
 
 /**
- * @extends RuleTestCase<ActionCannotUseDispatchable>
+ * @extends RuleTestCase<ActionCannotUseQueueable>
  */
-#[CoversClass(ActionCannotUseDispatchable::class)]
-class ActionCannotUseDispatchableTest extends RuleTestCase
+#[CoversClass(ActionCannotUseQueueable::class)]
+class ActionCannotUseQueueableTest extends RuleTestCase
 {
     protected function getRule(): Rule
     {
-        return new ActionCannotUseDispatchable;
+        return new ActionCannotUseQueueable;
     }
 
     private function getFixturePath(string $filename): string
@@ -27,17 +27,17 @@ class ActionCannotUseDispatchableTest extends RuleTestCase
     }
 
     #[Test]
-    public function it_passes_when_action_does_not_use_dispatchable(): void
+    public function it_passes_when_action_does_not_use_queueable(): void
     {
         $this->analyse([$this->getFixturePath('ValidAction.php')], []);
     }
 
     #[Test]
-    public function it_fails_when_action_uses_dispatchable_trait(): void
+    public function it_fails_when_action_uses_queueable_trait(): void
     {
-        $this->analyse([$this->getFixturePath('ActionWithDispatchable.php')], [
+        $this->analyse([$this->getFixturePath('ActionWithQueueable.php')], [
             [
-                '`Action` instances cannot use the `Illuminate\Foundation\Bus\Dispatchable` trait.',
+                '`Action` instances cannot use the `Illuminate\Foundation\Queue\Queueable` trait.',
                 14,
             ],
         ]);

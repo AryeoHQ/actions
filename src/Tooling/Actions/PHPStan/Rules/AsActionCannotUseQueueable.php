@@ -4,69 +4,61 @@ declare(strict_types=1);
 
 namespace Tooling\Actions\PhpStan\Rules;
 
-use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Foundation\Queue\Queueable;
 use PhpParser\Node;
 use PhpParser\Node\Name\FullyQualified;
-use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\Stmt\TraitUse;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
-use Support\Actions\Contracts\Action;
+use Support\Actions\Concerns\AsAction;
 
 /**
- * @implements Rule<Class_>
+ * @implements Rule<Trait_>
  */
-final class ActionCannotUseDispatchable implements Rule
+final class AsActionCannotUseQueueable implements Rule
 {
     public function getNodeType(): string
     {
-        return Class_::class;
+        return Trait_::class;
     }
 
     /**
-     * @param  Class_  $node
+     * @param  Trait_  $node
      * @return list<IdentifierRuleError>
      */
     public function processNode(Node $node, Scope $scope): array
     {
-        if (! $this->implementsActionContract($node)) {
+        if (! $this->isAsActionTrait($node, $scope)) {
             return [];
         }
 
-        $traitLine = $this->findDispatchableTraitLine($node);
+        $traitLine = $this->findQueueableTraitLine($node);
 
         if ($traitLine === null) {
             return [];
         }
 
         return [
-            RuleErrorBuilder::message('`Action` instances cannot use the `Illuminate\Foundation\Bus\Dispatchable` trait.')
+            RuleErrorBuilder::message('`AsAction` trait cannot use the `Illuminate\Foundation\Queue\Queueable` trait.')
                 ->line($traitLine)
-                ->identifier('actions.dispatchable')
+                ->identifier('asAction.queueable')
                 ->build(),
         ];
     }
 
-    private function implementsActionContract(Class_ $node): bool
+    private function isAsActionTrait(Trait_ $node, Scope $scope): bool
     {
-        if ($node->implements === []) {
+        if ($node->namespacedName === null) {
             return false;
         }
 
-        foreach ($node->implements as $interface) {
-            if ($interface instanceof FullyQualified) {
-                if ($interface->toString() === Action::class) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return $node->namespacedName->toString() === AsAction::class;
     }
 
-    private function findDispatchableTraitLine(Class_ $node): ?int
+    private function findQueueableTraitLine(Trait_ $node): ?int
     {
         if ($node->stmts === []) {
             return null;
@@ -75,7 +67,7 @@ final class ActionCannotUseDispatchable implements Rule
         foreach ($node->stmts as $stmt) {
             if ($stmt instanceof TraitUse) {
                 foreach ($stmt->traits as $trait) {
-                    if ($trait instanceof FullyQualified && $trait->toString() === Dispatchable::class) {
+                    if ($trait instanceof FullyQualified && $trait->toString() === Queueable::class) {
                         return $stmt->getStartLine();
                     }
                 }

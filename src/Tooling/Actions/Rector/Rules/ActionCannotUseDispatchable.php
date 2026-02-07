@@ -4,24 +4,17 @@ declare(strict_types=1);
 
 namespace Tooling\Actions\Rector\Rules;
 
+use Illuminate\Foundation\Bus\Dispatchable;
 use PhpParser\Node;
-use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\TraitUse;
-use Rector\PostRector\Collector\UseNodesToAddCollector;
 use Rector\Rector\AbstractRector;
-use Rector\StaticTypeMapper\ValueObject\Type\FullyQualifiedObjectType;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
-use Throwable;
 
-class AddAsActionToAction extends AbstractRector
+class ActionCannotUseDispatchable extends AbstractRector
 {
-    public function __construct(
-        private UseNodesToAddCollector $useNodesToAddCollector
-    ) {}
-
     public function getNodeTypes(): array
     {
         return [Class_::class];
@@ -36,9 +29,9 @@ class AddAsActionToAction extends AbstractRector
         $implementsAction = $this->implementsActionContract($node);
         $usesAsAction = $this->usesAsActionTrait($node);
 
-        // If Action contract is implemented, add AsAction trait if missing
-        if ($implementsAction && ! $usesAsAction) {
-            return $this->addAsActionTrait($node);
+        // If class implements Action or uses AsAction, remove Dispatchable trait
+        if ($implementsAction || $usesAsAction) {
+            return $this->removeDispatchableTrait($node);
         }
 
         return null;
@@ -86,34 +79,44 @@ class AddAsActionToAction extends AbstractRector
         return false;
     }
 
-    private function addAsActionTrait(Class_ $node): Class_
+    private function removeDispatchableTrait(Class_ $node): null|Class_
     {
-        // Check if trait is already used
-        if ($this->usesAsActionTrait($node)) {
+        if ($node->stmts === []) {
+            return null;
+        }
+
+        $modified = false;
+
+        foreach ($node->stmts as $key => $stmt) {
+            if ($stmt instanceof TraitUse) {
+                $filteredTraits = [];
+
+                foreach ($stmt->traits as $trait) {
+                    $isDispatchable = ($trait instanceof FullyQualified && $trait->toString() === Dispatchable::class)
+                        || $trait->toString() === 'Dispatchable';
+
+                    if (! $isDispatchable) {
+                        $filteredTraits[] = $trait;
+                    } else {
+                        $modified = true;
+                    }
+                }
+
+                // If all traits were removed, remove the entire TraitUse statement
+                if ($filteredTraits === []) {
+                    unset($node->stmts[$key]);
+                } else {
+                    $stmt->traits = $filteredTraits;
+                }
+            }
+        }
+
+        // Re-index array after unsetting
+        if ($modified) {
+            $node->stmts = array_values($node->stmts);
             return $node;
         }
 
-        // Add use statement for AsAction trait
-        // Only add use import if we have a current file context (not in tests)
-        try {
-            $this->useNodesToAddCollector->addUseImport(
-                new FullyQualifiedObjectType(AsAction::class)
-            );
-        } catch (Throwable $e) {
-            // In test environments, UseNodesToAddCollector might not have a current file
-            // This is expected and we can continue without adding the use statement
-        }
-
-        $asActionTrait = new Name('AsAction');
-        $traitUse = new TraitUse([$asActionTrait]);
-
-        // Add the trait use at the beginning of the class body
-        if ($node->stmts === []) {
-            $node->stmts = [$traitUse];
-        } else {
-            array_unshift($node->stmts, $traitUse);
-        }
-
-        return $node;
+        return null;
     }
 }

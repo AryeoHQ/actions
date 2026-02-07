@@ -47,8 +47,6 @@ class MakeActionTest extends TestCase
         $this->assertStringContainsString('final class TestAction', $actionClass, 'The action does not define the class as final');
         $this->assertStringContainsString('use Support\Actions\Contracts\Action;', $actionClass, 'The action does not import the Action interface');
         $this->assertStringContainsString('implements Action', $actionClass, 'The action does not implement the Action interface');
-        $this->assertStringContainsString('use Illuminate\Contracts\Queue\ShouldQueue;', $actionClass, 'The action does not import the ShouldQueue interface');
-        $this->assertStringContainsString('implements Action, ShouldQueue', $actionClass, 'The action does not implement the ShouldQueue interface');
         $this->assertStringContainsString('use AsAction;', $actionClass, 'The action does not use the AsAction trait');
     }
 }

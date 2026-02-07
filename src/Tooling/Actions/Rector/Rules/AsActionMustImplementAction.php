@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace Tooling\Actions\Rector\Rules;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
 use PhpParser\Node;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\TraitUse;
 use Rector\PostRector\Collector\UseNodesToAddCollector;
 use Rector\Rector\AbstractRector;
 use Rector\StaticTypeMapper\ValueObject\Type\FullyQualifiedObjectType;
+use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 use Throwable;
 
-class ShouldQueueMustImplementAction extends AbstractRector
+class AsActionMustImplementAction extends AbstractRector
 {
     public function __construct(
         private UseNodesToAddCollector $useNodesToAddCollector
@@ -32,31 +33,34 @@ class ShouldQueueMustImplementAction extends AbstractRector
             return null;
         }
 
-        if (! $this->implementsShouldQueue($node)) {
-            return null;
+        $usesAsAction = $this->usesAsActionTrait($node);
+        $implementsAction = $this->implementsActionContract($node);
+
+        // If AsAction trait is used, add Action contract if missing
+        if ($usesAsAction && ! $implementsAction) {
+            return $this->addActionContract($node);
         }
 
-        if ($this->implementsActionContract($node)) {
-            return null;
-        }
-
-        // Add Action interface
-        return $this->addActionContract($node);
+        return null;
     }
 
-    private function implementsShouldQueue(Class_ $node): bool
+    private function usesAsActionTrait(Class_ $node): bool
     {
-        if ($node->implements === []) {
+        if ($node->stmts === []) {
             return false;
         }
 
-        foreach ($node->implements as $interface) {
-            if ($interface instanceof FullyQualified && $interface->toString() === ShouldQueue::class) {
-                return true;
-            }
+        foreach ($node->stmts as $stmt) {
+            if ($stmt instanceof TraitUse) {
+                foreach ($stmt->traits as $trait) {
+                    if ($trait instanceof FullyQualified && $trait->toString() === AsAction::class) {
+                        return true;
+                    }
 
-            if ($interface->toString() === 'ShouldQueue') {
-                return true;
+                    if ($trait->toString() === 'AsAction') {
+                        return true;
+                    }
+                }
             }
         }
 
@@ -84,13 +88,20 @@ class ShouldQueueMustImplementAction extends AbstractRector
 
     private function addActionContract(Class_ $node): Class_
     {
+        // Check if contract is already implemented
+        if ($this->implementsActionContract($node)) {
+            return $node;
+        }
+
         // Add use statement for Action contract
+        // Only add use import if we have a current file context (not in tests)
         try {
             $this->useNodesToAddCollector->addUseImport(
                 new FullyQualifiedObjectType(Action::class)
             );
         } catch (Throwable $e) {
             // In test environments, UseNodesToAddCollector might not have a current file
+            // This is expected and we can continue without adding the use statement
         }
 
         $actionInterface = new Name('Action');

@@ -10,19 +10,19 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Tooling\Actions\Rector\Rules\AddAsActionToAction;
+use Tooling\Actions\Rector\Rules\ActionCannotUseDispatchable;
 
-#[CoversClass(AddAsActionToAction::class)]
-class AddAsActionToActionTest extends TestCase
+#[CoversClass(ActionCannotUseDispatchable::class)]
+class ActionCannotUseDispatchableTest extends TestCase
 {
-    private AddAsActionToAction $rule;
+    private ActionCannotUseDispatchable $rule;
 
     private ParserFactory|Parser $parser;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->rule = app(AddAsActionToAction::class);
+        $this->rule = app(ActionCannotUseDispatchable::class);
         $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
     }
 
@@ -32,9 +32,9 @@ class AddAsActionToActionTest extends TestCase
     }
 
     #[Test]
-    public function adds_trait_when_contract_is_implemented(): void
+    public function removes_dispatchable_trait_from_action(): void
     {
-        $code = $this->getFixture('MissingAsActionTraitAction.php');
+        $code = $this->getFixture('ActionWithDispatchable.php');
 
         $nodes = $this->parser->parse($code);
         $classNode = $this->getClassNode($nodes);
@@ -44,28 +44,26 @@ class AddAsActionToActionTest extends TestCase
         $result = $this->rule->refactor($classNode);
 
         $this->assertInstanceOf(Class_::class, $result);
-        $this->assertNotEmpty($result->stmts);
+
+        // Verify Dispatchable trait was removed
+        $hasDispatchable = false;
+        foreach ($result->stmts as $stmt) {
+            if ($stmt instanceof \PhpParser\Node\Stmt\TraitUse) {
+                foreach ($stmt->traits as $trait) {
+                    if ($trait->toString() === 'Dispatchable') {
+                        $hasDispatchable = true;
+                    }
+                }
+            }
+        }
+
+        $this->assertFalse($hasDispatchable, 'Dispatchable trait should be removed');
     }
 
     #[Test]
-    public function does_not_modify_complete_class(): void
+    public function does_not_modify_action_without_dispatchable(): void
     {
-        $code = $this->getFixture('CompleteAction.php');
-
-        $nodes = $this->parser->parse($code);
-        $classNode = $this->getClassNode($nodes);
-
-        $this->assertNotNull($classNode, 'Should find a class node');
-
-        $result = $this->rule->refactor($classNode);
-
-        $this->assertNull($result);
-    }
-
-    #[Test]
-    public function does_not_modify_non_action_class(): void
-    {
-        $code = $this->getFixture('NonActionClass.php');
+        $code = $this->getFixture('ValidAction.php');
 
         $nodes = $this->parser->parse($code);
         $classNode = $this->getClassNode($nodes);
