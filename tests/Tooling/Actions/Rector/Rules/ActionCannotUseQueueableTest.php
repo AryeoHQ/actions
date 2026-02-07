@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Tooling\Actions\Rector\Rules;
 
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\Namespace_;
+use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -48,7 +50,7 @@ class ActionCannotUseQueueableTest extends TestCase
         // Verify Queueable trait was removed
         $hasQueueable = false;
         foreach ($result->stmts as $stmt) {
-            if ($stmt instanceof \PhpParser\Node\Stmt\TraitUse) {
+            if ($stmt instanceof TraitUse) {
                 foreach ($stmt->traits as $trait) {
                     if ($trait->toString() === 'Queueable') {
                         $hasQueueable = true;
@@ -92,7 +94,7 @@ class ActionCannotUseQueueableTest extends TestCase
         // Verify Queueable trait was removed
         $hasQueueable = false;
         foreach ($result->stmts as $stmt) {
-            if ($stmt instanceof \PhpParser\Node\Stmt\TraitUse) {
+            if ($stmt instanceof TraitUse) {
                 foreach ($stmt->traits as $trait) {
                     if ($trait->toString() === 'Queueable') {
                         $hasQueueable = true;
@@ -110,7 +112,7 @@ class ActionCannotUseQueueableTest extends TestCase
     private function getClassNode(array $nodes): null|Class_
     {
         foreach ($nodes as $node) {
-            if ($node instanceof \PhpParser\Node\Stmt\Namespace_) {
+            if ($node instanceof Namespace_) {
                 foreach ($node->stmts as $stmt) {
                     if ($stmt instanceof Class_) {
                         return $stmt;
