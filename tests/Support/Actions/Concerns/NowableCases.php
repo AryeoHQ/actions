@@ -6,66 +6,66 @@ namespace Tests\Support\Actions\Concerns;
 
 use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\Fixtures\Orders\Actions\Ship;
+use Tests\Fixtures\Orders\Actions\Archive;
 
 trait NowableCases
 {
     #[Test]
     public function it_can_be_executed_synchronously(): void
     {
-        $result = Ship::make('test')->now();
+        $result = Archive::make('test')->now();
 
-        $this->assertEquals('test charged', $result);
+        $this->assertEquals('test archived', $result);
     }
 
     #[Test]
     public function it_can_be_faked_when_executed_synchronously(): void
     {
-        Ship::fake('mocked-value');
+        Archive::fake('mocked-value');
 
-        $result = Ship::make('test')->now();
+        $result = Archive::make('test')->now();
 
         $this->assertEquals('mocked-value', $result);
-        Bus::assertDispatched(Ship::class);
+        Bus::assertDispatched(Archive::class);
     }
 
     #[Test]
     public function it_can_be_faked_multiple_times_when_executed_synchronously(): void
     {
-        Ship::fake('first');
-        $result1 = Ship::make('test')->now();
+        Archive::fake('first');
+        $result1 = Archive::make('test')->now();
 
-        Ship::fake('second');
-        $result2 = Ship::make('test')->now();
+        Archive::fake('second');
+        $result2 = Archive::make('test')->now();
 
         $this->assertEquals('first', $result1);
         $this->assertEquals('second', $result2);
-        Bus::assertDispatched(Ship::class, 2);
+        Bus::assertDispatched(Archive::class, 2);
     }
 
     #[Test]
     public function it_can_be_conditionally_executed_synchronously(): void
     {
-        $result = Ship::make('test')->nowIf(true);
+        $result = Archive::make('test')->nowIf(true);
 
-        $this->assertEquals('test charged', $result);
+        $this->assertEquals('test archived', $result);
     }
 
     #[Test]
     public function it_can_be_faked_when_conditionally_executed_synchronously(): void
     {
-        Ship::fake('mocked-value');
+        Archive::fake('mocked-value');
 
-        $result = Ship::make('test')->nowIf(true);
+        $result = Archive::make('test')->nowIf(true);
 
         $this->assertEquals('mocked-value', $result);
-        Bus::assertDispatched(Ship::class);
+        Bus::assertDispatched(Archive::class);
     }
 
     #[Test]
     public function it_does_not_execute_synchronously_conditionally(): void
     {
-        $result = Ship::make('test')->nowIf(false);
+        $result = Archive::make('test')->nowIf(false);
 
         $this->assertNull($result);
     }
@@ -73,26 +73,26 @@ trait NowableCases
     #[Test]
     public function it_can_be_executed_synchronously_unless(): void
     {
-        $result = Ship::make('test')->nowUnless(false);
+        $result = Archive::make('test')->nowUnless(false);
 
-        $this->assertEquals('test charged', $result);
+        $this->assertEquals('test archived', $result);
     }
 
     #[Test]
     public function it_can_be_faked_when_executed_synchronously_unless(): void
     {
-        Ship::fake('mocked-value');
+        Archive::fake('mocked-value');
 
-        $result = Ship::make('test')->nowUnless(false);
+        $result = Archive::make('test')->nowUnless(false);
 
         $this->assertEquals('mocked-value', $result);
-        Bus::assertDispatched(Ship::class);
+        Bus::assertDispatched(Archive::class);
     }
 
     #[Test]
     public function it_does_not_execute_synchronously_unless(): void
     {
-        $result = Ship::make('test')->nowUnless(true);
+        $result = Archive::make('test')->nowUnless(true);
 
         $this->assertNull($result);
     }

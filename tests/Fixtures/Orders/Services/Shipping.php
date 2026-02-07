@@ -1,0 +1,13 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Fixtures\Orders\Services;
+
+final class Shipping
+{
+    public function process(): string
+    {
+        return 'shipped';
+    }
+}

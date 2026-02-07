@@ -56,7 +56,7 @@ final class Manager
     private static function handleSyncDispatch(): Closure
     {
         return function ($job) {
-            return static::handleDispatch($job, fn ($job) => $job->handle());
+            return static::handleDispatch($job, fn ($job) => app('dispatcher.busfake')->dispatchNow($job));
         };
     }
 

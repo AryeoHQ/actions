@@ -6,9 +6,8 @@ namespace Tests\Fixtures\Orders\Actions;
 
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
-use Tests\Fixtures\Orders\Services\Shipping;
 
-final class Ship implements Action
+final class Archive implements Action
 {
     use AsAction;
 
@@ -19,8 +18,8 @@ final class Ship implements Action
         $this->input = $input;
     }
 
-    public function handle(Shipping $service): string
+    public function handle(): string
     {
-        return $this->input . ' ' . $service->process();
+        return $this->input . ' archived';
     }
 }
