@@ -38,7 +38,7 @@ class ActionCannotUseDispatchableTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('ActionWithDispatchable.php')], [
             [
-                '`Action` instances cannot use the `' . Dispatchable::class . '` trait.',
+                '`Action` instances cannot use the `'.Dispatchable::class.'` trait.',
                 14,
             ],
         ]);

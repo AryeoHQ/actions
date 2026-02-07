@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Tooling\Actions\Rector\Rules;
 
+use PhpParser\Modifiers;
 use PhpParser\Node;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\TraitUse;
-use PhpParser\NodeAbstract;
-use PhpParser\Modifiers;
 use Rector\Rector\AbstractRector;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;

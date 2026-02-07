@@ -42,7 +42,7 @@ final class ActionCannotUseDispatchable implements Rule
         }
 
         return [
-            RuleErrorBuilder::message('`Action` instances cannot use the `' . Dispatchable::class . '` trait.')
+            RuleErrorBuilder::message('`Action` instances cannot use the `'.Dispatchable::class.'` trait.')
                 ->line($traitLine)
                 ->identifier('actions.dispatchable')
                 ->build(),
@@ -66,7 +66,7 @@ final class ActionCannotUseDispatchable implements Rule
         return false;
     }
 
-    private function findDispatchableTraitLine(Class_ $node): ?int
+    private function findDispatchableTraitLine(Class_ $node): null|int
     {
         if ($node->stmts === []) {
             return null;

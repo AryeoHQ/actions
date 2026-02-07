@@ -37,7 +37,7 @@ class AsActionCannotUseDispatchableTest extends RuleTestCase
     {
         $this->analyse([$this->getVariationFixturePath('AsActionWithDispatchable.php')], [
             [
-                '`AsAction` trait cannot use the `' . Dispatchable::class . '` trait.',
+                '`AsAction` trait cannot use the `'.Dispatchable::class.'` trait.',
                 12,
             ],
         ]);

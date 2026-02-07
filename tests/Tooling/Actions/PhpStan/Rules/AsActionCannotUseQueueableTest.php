@@ -32,7 +32,7 @@ class AsActionCannotUseQueueableTest extends RuleTestCase
     {
         $this->analyse([$this->getVariationFixturePath('AsActionWithQueueable.php')], [
             [
-                '`AsAction` trait cannot use the `' . Queueable::class . '` trait.',
+                '`AsAction` trait cannot use the `'.Queueable::class.'` trait.',
                 12,
             ],
         ]);

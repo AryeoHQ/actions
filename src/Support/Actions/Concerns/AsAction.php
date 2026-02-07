@@ -12,9 +12,9 @@ trait AsAction
 {
     use Dispatchable;
     use Fakeable;
+    use InteractsWithQueue;
     use Nowable;
     use Queueable;
-    use InteractsWithQueue;
     use SerializesModels;
 
     public static function make(mixed ...$arguments): static

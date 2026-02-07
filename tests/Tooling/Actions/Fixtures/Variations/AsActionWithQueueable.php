@@ -9,8 +9,8 @@ namespace Support\Actions\Concerns {
 
     trait AsAction
     {
-        use Queueable;
         use InteractsWithQueue;
+        use Queueable;
         use SerializesModels;
 
         public static function make(mixed ...$arguments): static

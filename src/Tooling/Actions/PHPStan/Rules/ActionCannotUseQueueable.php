@@ -42,7 +42,7 @@ final class ActionCannotUseQueueable implements Rule
         }
 
         return [
-            RuleErrorBuilder::message('`Action` instances cannot use the `' . Queueable::class . '` trait.')
+            RuleErrorBuilder::message('`Action` instances cannot use the `'.Queueable::class.'` trait.')
                 ->line($traitLine)
                 ->identifier('actions.queueable')
                 ->build(),
@@ -66,7 +66,7 @@ final class ActionCannotUseQueueable implements Rule
         return false;
     }
 
-    private function findQueueableTraitLine(Class_ $node): ?int
+    private function findQueueableTraitLine(Class_ $node): null|int
     {
         if ($node->stmts === []) {
             return null;

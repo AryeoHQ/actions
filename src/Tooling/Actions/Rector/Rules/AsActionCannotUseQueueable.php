@@ -99,6 +99,7 @@ class AsActionCannotUseQueueable extends AbstractRector
         // Re-index array after unsetting
         if ($modified) {
             $node->stmts = array_values($node->stmts);
+
             return $node;
         }
 

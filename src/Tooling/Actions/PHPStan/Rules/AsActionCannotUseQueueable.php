@@ -42,7 +42,7 @@ final class AsActionCannotUseQueueable implements Rule
         }
 
         return [
-            RuleErrorBuilder::message('`AsAction` trait cannot use the `' . Queueable::class . '` trait.')
+            RuleErrorBuilder::message('`AsAction` trait cannot use the `'.Queueable::class.'` trait.')
                 ->line($traitLine)
                 ->identifier('asAction.queueable')
                 ->build(),
@@ -58,7 +58,7 @@ final class AsActionCannotUseQueueable implements Rule
         return $node->namespacedName->toString() === AsAction::class;
     }
 
-    private function findQueueableTraitLine(Trait_ $node): ?int
+    private function findQueueableTraitLine(Trait_ $node): null|int
     {
         if ($node->stmts === []) {
             return null;

@@ -38,7 +38,7 @@ class ActionCannotUseQueueableTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('ActionWithQueueable.php')], [
             [
-                '`Action` instances cannot use the `' . Queueable::class . '` trait.',
+                '`Action` instances cannot use the `'.Queueable::class.'` trait.',
                 14,
             ],
         ]);

@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Orders\Actions;
 
-use Support\Actions\Contracts\Action;
 use Support\Actions\Concerns\AsAction;
-use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Support\Actions\Contracts\Action;
 
-final class Ship implements Action, ShouldQueue
+final class Ship implements Action
 {
     use AsAction;
 

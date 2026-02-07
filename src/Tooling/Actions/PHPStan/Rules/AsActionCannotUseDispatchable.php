@@ -42,7 +42,7 @@ final class AsActionCannotUseDispatchable implements Rule
         }
 
         return [
-            RuleErrorBuilder::message('`AsAction` trait cannot use the `' . Dispatchable::class . '` trait.')
+            RuleErrorBuilder::message('`AsAction` trait cannot use the `'.Dispatchable::class.'` trait.')
                 ->line($traitLine)
                 ->identifier('asAction.dispatchable')
                 ->build(),
@@ -58,7 +58,7 @@ final class AsActionCannotUseDispatchable implements Rule
         return $node->namespacedName->toString() === AsAction::class;
     }
 
-    private function findDispatchableTraitLine(Trait_ $node): ?int
+    private function findDispatchableTraitLine(Trait_ $node): null|int
     {
         if ($node->stmts === []) {
             return null;
