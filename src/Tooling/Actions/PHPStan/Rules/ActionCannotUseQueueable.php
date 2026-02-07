@@ -42,7 +42,7 @@ final class ActionCannotUseQueueable implements Rule
         }
 
         return [
-            RuleErrorBuilder::message('`Action` instances cannot use the `Illuminate\Foundation\Queue\Queueable` trait.')
+            RuleErrorBuilder::message('`Action` instances cannot use the `' . Queueable::class . '` trait.')
                 ->line($traitLine)
                 ->identifier('actions.queueable')
                 ->build(),

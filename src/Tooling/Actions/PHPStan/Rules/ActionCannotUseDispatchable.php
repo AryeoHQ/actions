@@ -42,7 +42,7 @@ final class ActionCannotUseDispatchable implements Rule
         }
 
         return [
-            RuleErrorBuilder::message('`Action` instances cannot use the `Illuminate\Foundation\Bus\Dispatchable` trait.')
+            RuleErrorBuilder::message('`Action` instances cannot use the `' . Dispatchable::class . '` trait.')
                 ->line($traitLine)
                 ->identifier('actions.dispatchable')
                 ->build(),

@@ -42,7 +42,7 @@ final class AsActionCannotUseQueueable implements Rule
         }
 
         return [
-            RuleErrorBuilder::message('`AsAction` trait cannot use the `Illuminate\Foundation\Queue\Queueable` trait.')
+            RuleErrorBuilder::message('`AsAction` trait cannot use the `' . Queueable::class . '` trait.')
                 ->line($traitLine)
                 ->identifier('asAction.queueable')
                 ->build(),

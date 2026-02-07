@@ -42,7 +42,7 @@ final class AsActionCannotUseDispatchable implements Rule
         }
 
         return [
-            RuleErrorBuilder::message('`AsAction` trait cannot use the `Illuminate\Foundation\Bus\Dispatchable` trait.')
+            RuleErrorBuilder::message('`AsAction` trait cannot use the `' . Dispatchable::class . '` trait.')
                 ->line($traitLine)
                 ->identifier('asAction.dispatchable')
                 ->build(),
