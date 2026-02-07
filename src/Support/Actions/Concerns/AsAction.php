@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Support\Actions\Concerns;
 
-use Illuminate\Bus\Queueable;
+use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 

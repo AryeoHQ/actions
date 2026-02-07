@@ -75,6 +75,35 @@ class ActionCannotUseQueueableTest extends TestCase
         $this->assertNull($result);
     }
 
+    #[Test]
+    public function removes_legacy_queueable_trait_from_action(): void
+    {
+        $code = $this->getFixture('ActionWithLegacyQueueable.php');
+
+        $nodes = $this->parser->parse($code);
+        $classNode = $this->getClassNode($nodes);
+
+        $this->assertNotNull($classNode, 'Should find a class node');
+
+        $result = $this->rule->refactor($classNode);
+
+        $this->assertInstanceOf(Class_::class, $result);
+
+        // Verify Queueable trait was removed
+        $hasQueueable = false;
+        foreach ($result->stmts as $stmt) {
+            if ($stmt instanceof \PhpParser\Node\Stmt\TraitUse) {
+                foreach ($stmt->traits as $trait) {
+                    if ($trait->toString() === 'Queueable') {
+                        $hasQueueable = true;
+                    }
+                }
+            }
+        }
+
+        $this->assertFalse($hasQueueable, 'Legacy Queueable trait should be removed');
+    }
+
     /**
      * @param  array<\PhpParser\Node\Stmt>  $nodes
      */

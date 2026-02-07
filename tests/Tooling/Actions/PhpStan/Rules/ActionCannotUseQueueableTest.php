@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Tooling\Actions\PhpStan\Rules;
 
+use Illuminate\Bus\Queueable as LegacyQueueable;
 use Illuminate\Foundation\Queue\Queueable;
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
@@ -38,7 +39,18 @@ class ActionCannotUseQueueableTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('ActionWithQueueable.php')], [
             [
-                '`Action` instances cannot use the `'.Queueable::class.'` trait.',
+                '`Action` instances cannot use the `Queueable` trait (`'.Queueable::class.'` or `'.LegacyQueueable::class.'`).',
+                14,
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function it_fails_when_action_uses_legacy_queueable_trait(): void
+    {
+        $this->analyse([$this->getFixturePath('ActionWithLegacyQueueable.php')], [
+            [
+                '`Action` instances cannot use the `Queueable` trait (`'.Queueable::class.'` or `'.LegacyQueueable::class.'`).',
                 14,
             ],
         ]);

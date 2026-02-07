@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tooling\Actions\Rector\Rules;
 
+use Illuminate\Bus\Queueable as LegacyQueueable;
 use Illuminate\Foundation\Queue\Queueable;
 use PhpParser\Node;
 use PhpParser\Node\Name\FullyQualified;
@@ -92,8 +93,10 @@ class ActionCannotUseQueueable extends AbstractRector
                 $filteredTraits = [];
 
                 foreach ($stmt->traits as $trait) {
-                    $isQueueable = ($trait instanceof FullyQualified && $trait->toString() === Queueable::class)
-                        || $trait->toString() === 'Queueable';
+                    $isQueueable = ($trait instanceof FullyQualified && (
+                        $trait->toString() === Queueable::class ||
+                        $trait->toString() === LegacyQueueable::class
+                    )) || $trait->toString() === 'Queueable';
 
                     if (! $isQueueable) {
                         $filteredTraits[] = $trait;

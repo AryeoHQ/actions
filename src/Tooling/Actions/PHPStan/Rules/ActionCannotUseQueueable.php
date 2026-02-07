@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tooling\Actions\PhpStan\Rules;
 
+use Illuminate\Bus\Queueable as LegacyQueueable;
 use Illuminate\Foundation\Queue\Queueable;
 use PhpParser\Node;
 use PhpParser\Node\Name\FullyQualified;
@@ -42,7 +43,7 @@ final class ActionCannotUseQueueable implements Rule
         }
 
         return [
-            RuleErrorBuilder::message('`Action` instances cannot use the `'.Queueable::class.'` trait.')
+            RuleErrorBuilder::message('`Action` instances cannot use the `Queueable` trait (`'.Queueable::class.'` or `'.LegacyQueueable::class.'`).')
                 ->line($traitLine)
                 ->identifier('actions.queueable')
                 ->build(),
@@ -75,7 +76,10 @@ final class ActionCannotUseQueueable implements Rule
         foreach ($node->stmts as $stmt) {
             if ($stmt instanceof TraitUse) {
                 foreach ($stmt->traits as $trait) {
-                    if ($trait instanceof FullyQualified && $trait->toString() === Queueable::class) {
+                    if ($trait instanceof FullyQualified && (
+                        $trait->toString() === Queueable::class ||
+                        $trait->toString() === LegacyQueueable::class
+                    )) {
                         return $stmt->getStartLine();
                     }
                 }
