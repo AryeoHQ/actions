@@ -1,16 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Support\Actions\Commands;
 
-use Tests\TestCase;
-use PHPUnit\Framework\Attributes\Test;
 use Illuminate\Console\GeneratorCommand;
-use Support\Actions\Commands\MakeAction;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use Support\Actions\Commands\MakeAction;
+use Tests\TestCase;
 
 #[CoversClass(MakeAction::class)]
 class MakeActionTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        $testActionPath = app_path('Actions/TestAction.php');
+
+        if (file_exists($testActionPath)) {
+            unlink($testActionPath);
+        }
+
+        parent::tearDown();
+    }
+
     #[Test]
     public function command_is_instance_of_generator_command(): void
     {

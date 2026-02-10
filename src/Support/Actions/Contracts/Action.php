@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Support\Actions\Contracts;
 
-interface Action
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+interface Action extends ShouldQueue
 {
-    public static function make(): static;
+    public static function make(mixed ...$arguments): static;
 }

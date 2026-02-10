@@ -11,21 +11,13 @@ final class DummyClass implements Action
 {
     use AsAction;
 
-    /**
-     * Create a new action instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         // Prepare the action for execution, leveraging constructor injection.
     }
 
-    /**
-     * Execute the action.
-     */
-    public function execute()
+    public function handle()
     {
-        // The business logic goes here.
+        // Business logic
     }
 }
