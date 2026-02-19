@@ -10,68 +10,37 @@ use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\TraitUse;
 use PHPStan\Analyser\Scope;
-use PHPStan\Rules\IdentifierRuleError;
-use PHPStan\Rules\Rule;
-use PHPStan\Rules\RuleErrorBuilder;
 use Support\Actions\Contracts\Action;
+use Tooling\Rules\Attributes\NodeType;
 
 /**
- * @implements Rule<Class_>
+ * @extends \Tooling\PhpStan\Rules\Rule<Class_>
  */
-final class ActionCannotUseQueueable implements Rule
+#[NodeType(Class_::class)]
+final class ActionCannotUseQueueable extends \Tooling\PhpStan\Rules\Rule
 {
-    public function getNodeType(): string
+    /**
+     * @param  Class_  $node
+     */
+    public function shouldHandle(Node $node, Scope $scope): bool
     {
-        return Class_::class;
+        return $this->inherits($node, Action::class) && $this->inherits($node, Queueable::class);
     }
 
     /**
      * @param  Class_  $node
-     * @return list<IdentifierRuleError>
      */
-    public function processNode(Node $node, Scope $scope): array
+    public function handle(Node $node, Scope $scope): void
     {
-        if (! $this->implementsActionContract($node)) {
-            return [];
-        }
-
-        $traitLine = $this->findQueueableTraitLine($node);
-
-        if ($traitLine === null) {
-            return [];
-        }
-
-        return [
-            RuleErrorBuilder::message('`Action` instances cannot use the `'.Queueable::class.'` trait.')
-                ->line($traitLine)
-                ->identifier('actions.queueable')
-                ->build(),
-        ];
-    }
-
-    private function implementsActionContract(Class_ $node): bool
-    {
-        if ($node->implements === []) {
-            return false;
-        }
-
-        foreach ($node->implements as $interface) {
-            if ($interface instanceof FullyQualified) {
-                if ($interface->toString() === Action::class) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        $this->error(
+            '`Action` instances cannot use the `'.Queueable::class.'` trait.',
+            $this->findQueueableTraitLine($node) ?? $node->getStartLine(),
+            'actions.queueable'
+        );
     }
 
     private function findQueueableTraitLine(Class_ $node): null|int
     {
-        if ($node->stmts === []) {
-            return null;
-        }
-
         foreach ($node->stmts as $stmt) {
             if ($stmt instanceof TraitUse) {
                 foreach ($stmt->traits as $trait) {

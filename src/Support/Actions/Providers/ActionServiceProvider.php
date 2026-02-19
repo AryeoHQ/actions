@@ -19,6 +19,14 @@ final class ActionServiceProvider extends ServiceProvider implements DeferrableP
         }
     }
 
+    public function boot(): void
+    {
+        $this->loadViewsFrom(
+            __DIR__.'/../../../../resources/views/rector/rules',
+            'tooling.actions.rector.rules.samples'
+        );
+    }
+
     /**
      * @return array<string>
      */

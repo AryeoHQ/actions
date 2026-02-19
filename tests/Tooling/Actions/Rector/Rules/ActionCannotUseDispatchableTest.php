@@ -4,92 +4,49 @@ declare(strict_types=1);
 
 namespace Tests\Tooling\Actions\Rector\Rules;
 
+use Illuminate\Foundation\Bus\Dispatchable;
 use PhpParser\Node\Stmt\Class_;
-use PhpParser\Parser;
-use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Tooling\Concerns\GetsFixtures;
 use Tooling\Actions\Rector\Rules\ActionCannotUseDispatchable;
+use Tooling\Rector\Rules\Provides\ValidatesInheritance;
+use Tooling\Rector\Testing\ParsesNodes;
+use Tooling\Rector\Testing\ResolvesRectorRules;
 
 #[CoversClass(ActionCannotUseDispatchable::class)]
 class ActionCannotUseDispatchableTest extends TestCase
 {
-    private ActionCannotUseDispatchable $rule;
-
-    private ParserFactory|Parser $parser;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->rule = app(ActionCannotUseDispatchable::class);
-        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
-    }
-
-    private function getFixture(string $filename): string
-    {
-        return file_get_contents(__DIR__.'/../../../../Fixtures/Tooling/'.$filename);
-    }
+    use GetsFixtures;
+    use ParsesNodes;
+    use ResolvesRectorRules;
+    use ValidatesInheritance;
 
     #[Test]
     public function removes_dispatchable_trait_from_action(): void
     {
-        $code = $this->getFixture('ActionWithDispatchable.php');
+        $classNode = $this->getClassNode($this->getFixturePath('ActionWithDispatchable.php'));
 
-        $nodes = $this->parser->parse($code);
-        $classNode = $this->getClassNode($nodes);
+        $this->assertTrue($this->inherits($classNode, Dispatchable::class));
 
-        $this->assertNotNull($classNode, 'Should find a class node');
-
-        $result = $this->rule->refactor($classNode);
+        $rule = $this->resolveRule(ActionCannotUseDispatchable::class);
+        $result = $rule->refactor($classNode);
 
         $this->assertInstanceOf(Class_::class, $result);
-
-        // Verify Dispatchable trait was removed
-        $hasDispatchable = false;
-        foreach ($result->stmts as $stmt) {
-            if ($stmt instanceof \PhpParser\Node\Stmt\TraitUse) {
-                foreach ($stmt->traits as $trait) {
-                    if ($trait->toString() === 'Dispatchable') {
-                        $hasDispatchable = true;
-                    }
-                }
-            }
-        }
-
-        $this->assertFalse($hasDispatchable, 'Dispatchable trait should be removed');
+        $this->assertFalse($this->inherits($result, Dispatchable::class));
     }
 
     #[Test]
     public function does_not_modify_action_without_dispatchable(): void
     {
-        $code = $this->getFixture('ValidAction.php');
+        $classNode = $this->getClassNode($this->getFixturePath('ValidAction.php'));
 
-        $nodes = $this->parser->parse($code);
-        $classNode = $this->getClassNode($nodes);
+        $this->assertTrue($this->doesNotInherit($classNode, Dispatchable::class));
 
-        $this->assertNotNull($classNode, 'Should find a class node');
-
-        $result = $this->rule->refactor($classNode);
+        $rule = $this->resolveRule(ActionCannotUseDispatchable::class);
+        $result = $rule->refactor($classNode);
 
         $this->assertNull($result);
-    }
-
-    /**
-     * @param  array<\PhpParser\Node\Stmt>  $nodes
-     */
-    private function getClassNode(array $nodes): null|Class_
-    {
-        foreach ($nodes as $node) {
-            if ($node instanceof \PhpParser\Node\Stmt\Namespace_) {
-                foreach ($node->stmts as $stmt) {
-                    if ($stmt instanceof Class_) {
-                        return $stmt;
-                    }
-                }
-            }
-        }
-
-        return null;
     }
 }

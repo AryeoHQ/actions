@@ -5,78 +5,48 @@ declare(strict_types=1);
 namespace Tests\Tooling\Actions\Rector\Rules;
 
 use PhpParser\Node\Stmt\Class_;
-use PhpParser\Parser;
-use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Actions\Contracts\Action;
 use Tests\TestCase;
+use Tests\Tooling\Concerns\GetsFixtures;
 use Tooling\Actions\Rector\Rules\AsActionMustImplementAction;
+use Tooling\Rector\Rules\Provides\ValidatesInheritance;
+use Tooling\Rector\Testing\ParsesNodes;
+use Tooling\Rector\Testing\ResolvesRectorRules;
 
 #[CoversClass(AsActionMustImplementAction::class)]
 class AsActionMustImplementActionTest extends TestCase
 {
-    private AsActionMustImplementAction $rule;
-
-    private ParserFactory|Parser $parser;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->rule = app(AsActionMustImplementAction::class);
-        $this->parser = (new ParserFactory)->createForNewestSupportedVersion();
-    }
-
-    private function getFixture(string $filename): string
-    {
-        return file_get_contents(__DIR__.'/../../../../Fixtures/Tooling/'.$filename);
-    }
+    use GetsFixtures;
+    use ParsesNodes;
+    use ResolvesRectorRules;
+    use ValidatesInheritance;
 
     #[Test]
     public function adds_contract_when_trait_is_used(): void
     {
-        $code = $this->getFixture('MissingActionContractAction.php');
+        $classNode = $this->getClassNode($this->getFixturePath('MissingActionContractAction.php'));
 
-        $nodes = $this->parser->parse($code);
-        $classNode = $this->getClassNode($nodes);
+        $this->assertTrue($this->doesNotInherit($classNode, Action::class));
 
-        $this->assertNotNull($classNode, 'Should find a class node');
-
-        $result = $this->rule->refactor($classNode);
+        $rule = $this->resolveRule(AsActionMustImplementAction::class);
+        $result = $rule->refactor($classNode);
 
         $this->assertInstanceOf(Class_::class, $result);
-        $this->assertCount(1, $result->implements);
+        $this->assertTrue($this->inherits($result, Action::class));
     }
 
     #[Test]
     public function does_not_modify_complete_class(): void
     {
-        $code = $this->getFixture('ValidAction.php');
+        $classNode = $this->getClassNode($this->getFixturePath('ValidAction.php'));
 
-        $nodes = $this->parser->parse($code);
-        $classNode = $this->getClassNode($nodes);
+        $this->assertTrue($this->inherits($classNode, Action::class));
 
-        $this->assertNotNull($classNode, 'Should find a class node');
+        $rule = $this->resolveRule(AsActionMustImplementAction::class);
+        $result = $rule->refactor($classNode);
 
-        $result = $this->rule->refactor($classNode);
-
-        $this->assertNull($result);
-    }
-
-    /**
-     * @param  array<\PhpParser\Node\Stmt>  $nodes
-     */
-    private function getClassNode(array $nodes): null|Class_
-    {
-        foreach ($nodes as $node) {
-            if ($node instanceof \PhpParser\Node\Stmt\Namespace_) {
-                foreach ($node->stmts as $stmt) {
-                    if ($stmt instanceof Class_) {
-                        return $stmt;
-                    }
-                }
-            }
-        }
-
-        return null;
+        $this->assertTrue($this->inherits($result, Action::class));
     }
 }
