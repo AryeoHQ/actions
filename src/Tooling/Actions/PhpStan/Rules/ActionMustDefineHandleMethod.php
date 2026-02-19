@@ -5,71 +5,34 @@ declare(strict_types=1);
 namespace Tooling\Actions\PhpStan\Rules;
 
 use PhpParser\Node;
-use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
 use PHPStan\Analyser\Scope;
-use PHPStan\Rules\IdentifierRuleError;
-use PHPStan\Rules\Rule;
-use PHPStan\Rules\RuleErrorBuilder;
 use Support\Actions\Contracts\Action;
+use Tooling\Rules\Attributes\NodeType;
 
 /**
- * @implements Rule<Class_>
+ * @extends \Tooling\PhpStan\Rules\Rule<Class_>
  */
-final class ActionMustDefineHandleMethod implements Rule
+#[NodeType(Class_::class)]
+final class ActionMustDefineHandleMethod extends \Tooling\PhpStan\Rules\Rule
 {
-    public function getNodeType(): string
+    /**
+     * @param  Class_  $node
+     */
+    public function shouldHandle(Node $node, Scope $scope): bool
     {
-        return Class_::class;
+        return $this->inherits($node, Action::class) && $this->doesNotHaveMethod($node, 'handle');
     }
 
     /**
      * @param  Class_  $node
-     * @return list<IdentifierRuleError>
      */
-    public function processNode(Node $node, Scope $scope): array
+    public function handle(Node $node, Scope $scope): void
     {
-        if (! $this->implementsActionContract($node)) {
-            return [];
-        }
-
-        if ($this->hasHandleMethod($node)) {
-            return [];
-        }
-
-        return [
-            RuleErrorBuilder::message('`Action` instances must implement `handle()`.')
-                ->line($node->getStartLine())
-                ->identifier('actions.handle')
-                ->build(),
-        ];
-    }
-
-    private function implementsActionContract(Class_ $node): bool
-    {
-        if ($node->implements === []) {
-            return false;
-        }
-
-        foreach ($node->implements as $interface) {
-            if ($interface instanceof FullyQualified) {
-                if ($interface->toString() === Action::class) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private function hasHandleMethod(Class_ $node): bool
-    {
-        foreach ($node->stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\ClassMethod && $stmt->name->name === 'handle') {
-                return true;
-            }
-        }
-
-        return false;
+        $this->error(
+            '`Action` instances must implement `handle()`.',
+            $node->getStartLine(),
+            'actions.handle'
+        );
     }
 }

@@ -5,60 +5,34 @@ declare(strict_types=1);
 namespace Tooling\Actions\PhpStan\Rules;
 
 use PhpParser\Node;
-use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
 use PHPStan\Analyser\Scope;
-use PHPStan\Rules\IdentifierRuleError;
-use PHPStan\Rules\Rule;
-use PHPStan\Rules\RuleErrorBuilder;
 use Support\Actions\Contracts\Action;
+use Tooling\Rules\Attributes\NodeType;
 
 /**
- * @implements Rule<Class_>
+ * @extends \Tooling\PhpStan\Rules\Rule<Class_>
  */
-final class ActionMustBeFinal implements Rule
+#[NodeType(Class_::class)]
+final class ActionMustBeFinal extends \Tooling\PhpStan\Rules\Rule
 {
-    public function getNodeType(): string
+    /**
+     * @param  Class_  $node
+     */
+    public function shouldHandle(Node $node, Scope $scope): bool
     {
-        return Class_::class;
+        return $this->inherits($node, Action::class) && ! $node->isFinal();
     }
 
     /**
      * @param  Class_  $node
-     * @return list<IdentifierRuleError>
      */
-    public function processNode(Node $node, Scope $scope): array
+    public function handle(Node $node, Scope $scope): void
     {
-        if (! $this->implementsActionContract($node)) {
-            return [];
-        }
-
-        if ($node->isFinal()) {
-            return [];
-        }
-
-        return [
-            RuleErrorBuilder::message('`Action` instances must be `final`.')
-                ->line($node->getStartLine())
-                ->identifier('actions.final')
-                ->build(),
-        ];
-    }
-
-    private function implementsActionContract(Class_ $node): bool
-    {
-        if ($node->implements === []) {
-            return false;
-        }
-
-        foreach ($node->implements as $interface) {
-            if ($interface instanceof FullyQualified) {
-                if ($interface->toString() === Action::class) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        $this->error(
+            '`Action` instances must be `final`.',
+            $node->getStartLine(),
+            'actions.final'
+        );
     }
 }

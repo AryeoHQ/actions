@@ -8,52 +8,41 @@ use PhpParser\Node;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
 use PHPStan\Analyser\Scope;
-use PHPStan\Rules\IdentifierRuleError;
-use PHPStan\Rules\Rule;
-use PHPStan\Rules\RuleErrorBuilder;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
+use Tooling\Rules\Attributes\NodeType;
 
 /**
- * @implements Rule<Class_>
+ * @extends \Tooling\PhpStan\Rules\Rule<Class_>
  */
-final class AsActionMustImplementAction implements Rule
+#[NodeType(Class_::class)]
+final class AsActionMustImplementAction extends \Tooling\PhpStan\Rules\Rule
 {
-    public function getNodeType(): string
+    /**
+     * @param  Class_  $node
+     */
+    public function shouldHandle(Node $node, Scope $scope): bool
     {
-        return Class_::class;
+        return $this->inherits($node, AsAction::class)
+            && $this->doesNotInherit($node, Action::class);
     }
 
     /**
      * @param  Class_  $node
-     * @return list<IdentifierRuleError>
      */
-    public function processNode(Node $node, Scope $scope): array
+    public function handle(Node $node, Scope $scope): void
     {
         $traitLine = $this->getAsActionTraitLine($node);
 
-        if ($traitLine === null) {
-            return [];
-        }
-
-        if ($this->implementsActionContract($node)) {
-            return [];
-        }
-
-        return [
-            RuleErrorBuilder::message('`AsAction` trait requires `Action` contract.')
-                ->line($traitLine)
-                ->identifier('actions.interface')
-                ->build(),
-        ];
+        $this->error(
+            '`AsAction` trait requires `Action` contract.',
+            $traitLine,
+            'actions.interface'
+        );
     }
 
     private function getAsActionTraitLine(Class_ $node): null|int
     {
-        if ($node->stmts === []) {
-            return null;
-        }
-
         foreach ($node->stmts as $stmt) {
             if ($stmt instanceof Node\Stmt\TraitUse) {
                 foreach ($stmt->traits as $trait) {
@@ -67,22 +56,5 @@ final class AsActionMustImplementAction implements Rule
         }
 
         return null;
-    }
-
-    private function implementsActionContract(Class_ $node): bool
-    {
-        if ($node->implements === []) {
-            return false;
-        }
-
-        foreach ($node->implements as $interface) {
-            if ($interface instanceof FullyQualified) {
-                if ($interface->toString() === Action::class) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }

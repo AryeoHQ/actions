@@ -7,34 +7,27 @@ namespace Tooling\Actions\PhpStan\Rules;
 use PhpParser\Node;
 use PhpParser\Node\Expr\MethodCall;
 use PHPStan\Analyser\Scope;
-use PHPStan\Rules\IdentifierRuleError;
-use PHPStan\Rules\Rule;
-use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Type\ObjectType;
 use Support\Actions\Contracts\Action;
+use Tooling\Rules\Attributes\NodeType;
 
 /**
- * @implements Rule<MethodCall>
+ * @extends \Tooling\PhpStan\Rules\Rule<MethodCall>
  */
-final class ActionHandleCannotBeCalledDirectly implements Rule
+#[NodeType(MethodCall::class)]
+final class ActionHandleCannotBeCalledDirectly extends \Tooling\PhpStan\Rules\Rule
 {
-    public function getNodeType(): string
-    {
-        return MethodCall::class;
-    }
-
     /**
      * @param  MethodCall  $node
-     * @return list<IdentifierRuleError>
      */
-    public function processNode(Node $node, Scope $scope): array
+    public function shouldHandle(Node $node, Scope $scope): bool
     {
         if (! $node->name instanceof Node\Identifier) {
-            return [];
+            return false;
         }
 
         if ($node->name->name !== 'handle') {
-            return [];
+            return false;
         }
 
         $callerType = $scope->getType($node->var);
@@ -44,24 +37,29 @@ final class ActionHandleCannotBeCalledDirectly implements Rule
 
             if ($classReflection !== null && $classReflection->getName() === $className) {
                 // Allow calling handle() from within the same class
-                return [];
+                return false;
             }
 
             $objectType = new ObjectType($className);
             $actionType = new ObjectType(Action::class);
 
             if ($actionType->isSuperTypeOf($objectType)->yes()) {
-                return [
-                    RuleErrorBuilder::message(
-                        'Method handle() cannot be called directly on Action instances. Use now() or dispatch() instead.'
-                    )
-                        ->line($node->getStartLine())
-                        ->identifier('actions.handleDirectCall')
-                        ->build(),
-                ];
+                return true;
             }
         }
 
-        return [];
+        return false;
+    }
+
+    /**
+     * @param  MethodCall  $node
+     */
+    public function handle(Node $node, Scope $scope): void
+    {
+        $this->error(
+            'Method handle() cannot be called directly on Action instances. Use now() or dispatch() instead.',
+            $node->getStartLine(),
+            'actions.handleDirectCall'
+        );
     }
 }
