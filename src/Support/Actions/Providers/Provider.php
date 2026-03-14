@@ -8,7 +8,7 @@ use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 use Support\Actions\Commands\MakeAction;
 
-final class ActionServiceProvider extends ServiceProvider implements DeferrableProvider
+final class Provider extends ServiceProvider implements DeferrableProvider
 {
     public function register(): void
     {

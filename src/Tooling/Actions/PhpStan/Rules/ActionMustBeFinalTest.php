@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Tests\Tooling\Actions\PhpStan\Rules;
+namespace Tooling\Actions\PhpStan\Rules;
 
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use Tooling\Actions\PhpStan\Rules\ActionMustBeFinal;
 
 /**
  * @extends RuleTestCase<ActionMustBeFinal>
@@ -22,7 +21,7 @@ class ActionMustBeFinalTest extends RuleTestCase
 
     private function getFixturePath(string $filename): string
     {
-        return __DIR__.'/../../../../Fixtures/Tooling/'.$filename;
+        return __DIR__.'/../../../../../tests/Fixtures/Tooling/'.$filename;
     }
 
     #[Test]

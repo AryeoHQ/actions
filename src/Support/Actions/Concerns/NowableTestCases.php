@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Actions\Concerns;
+namespace Support\Actions\Concerns;
 
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Fixtures\Support\Orders\Actions\Archive;
@@ -10,7 +10,7 @@ use Tests\Fixtures\Support\Orders\Actions\Notify;
 use Tests\Fixtures\Support\Orders\Actions\Ship;
 use Tests\Fixtures\Support\Orders\Order;
 
-trait NowableCases
+trait NowableTestCases
 {
     #[Test]
     public function it_can_be_executed_now(): void

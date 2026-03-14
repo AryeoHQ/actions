@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace DummyNamespace;
+namespace {{ namespace }};
 
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 
-final class DummyClass implements Action
+final class {{ class }} implements Action
 {
     use AsAction;
 

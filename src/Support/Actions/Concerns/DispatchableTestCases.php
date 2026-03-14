@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Actions\Concerns;
+namespace Support\Actions\Concerns;
 
 use Illuminate\Foundation\Bus\PendingDispatch;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Fixtures\Support\Orders\Actions\Archive;
 use Tests\Fixtures\Support\Orders\Order;
 
-trait DispatchableCases
+trait DispatchableTestCases
 {
     #[Test]
     public function it_returns_pending_dispatch_when_dispatched(): void
