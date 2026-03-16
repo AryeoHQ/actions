@@ -2,23 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Actions\Providers;
+namespace Support\Actions\Providers;
 
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\Facades\Artisan;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Support\Actions\Commands\MakeAction;
-use Support\Actions\Providers\ActionServiceProvider;
 use Tests\TestCase;
 
-#[CoversClass(ActionServiceProvider::class)]
-class ActionServiceProviderTest extends TestCase
+#[CoversClass(Provider::class)]
+class ProviderTest extends TestCase
 {
     #[Test]
     public function it_implements_deferrable_provider(): void
     {
-        $provider = new ActionServiceProvider($this->app);
+        $provider = new Provider($this->app);
 
         $this->assertInstanceOf(DeferrableProvider::class, $provider);
     }
@@ -26,7 +25,7 @@ class ActionServiceProviderTest extends TestCase
     #[Test]
     public function it_provides_make_action_command(): void
     {
-        $provider = new ActionServiceProvider($this->app);
+        $provider = new Provider($this->app);
 
         $provides = $provider->provides();
 

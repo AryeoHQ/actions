@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Actions\Concerns;
+namespace Support\Actions\Concerns;
 
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Fixtures\Support\Orders\Actions\Notify;
 
-trait AsActionCases
+trait AsActionTestCases
 {
-    use DispatchableCases;
-    use NowableCases;
+    use DispatchableTestCases;
+    use NowableTestCases;
 
     #[Test]
     public function it_is_makeable(): void

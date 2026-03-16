@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Tooling\Actions\Rector\Rules;
+namespace Tooling\Actions\Rector\Rules;
 
 use Illuminate\Foundation\Bus\Dispatchable;
 use PhpParser\Node\Stmt\Class_;
@@ -10,7 +10,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Tooling\Concerns\GetsFixtures;
-use Tooling\Actions\Rector\Rules\ActionCannotUseDispatchable;
 use Tooling\Rector\Rules\Provides\ValidatesInheritance;
 use Tooling\Rector\Testing\ParsesNodes;
 use Tooling\Rector\Testing\ResolvesRectorRules;

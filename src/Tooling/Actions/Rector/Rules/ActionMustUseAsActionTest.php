@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Tooling\Actions\Rector\Rules;
+namespace Tooling\Actions\Rector\Rules;
 
 use PhpParser\Node\Stmt\Class_;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -10,7 +10,6 @@ use PHPUnit\Framework\Attributes\Test;
 use Support\Actions\Concerns\AsAction;
 use Tests\TestCase;
 use Tests\Tooling\Concerns\GetsFixtures;
-use Tooling\Actions\Rector\Rules\ActionMustUseAsAction;
 use Tooling\Rector\Rules\Provides\ValidatesInheritance;
 use Tooling\Rector\Testing\ParsesNodes;
 use Tooling\Rector\Testing\ResolvesRectorRules;

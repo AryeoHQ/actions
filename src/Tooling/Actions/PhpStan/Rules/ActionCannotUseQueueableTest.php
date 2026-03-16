@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Tests\Tooling\Actions\PhpStan\Rules;
+namespace Tooling\Actions\PhpStan\Rules;
 
 use Illuminate\Foundation\Queue\Queueable;
 use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use Tooling\Actions\PhpStan\Rules\ActionCannotUseQueueable;
 
 /**
  * @extends RuleTestCase<ActionCannotUseQueueable>
@@ -24,7 +23,7 @@ class ActionCannotUseQueueableTest extends RuleTestCase
 
     private function getFixturePath(string $filename): string
     {
-        return __DIR__.'/../../../../Fixtures/Tooling/'.$filename;
+        return __DIR__.'/../../../../../tests/Fixtures/Tooling/'.$filename;
     }
 
     #[Test]
