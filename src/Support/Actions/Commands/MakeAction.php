@@ -10,9 +10,10 @@ use Support\Actions\References\Action;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
+use Tooling\Composer\ClassMap\Collectors\All;
 use Tooling\GeneratorCommands\Concerns\CreatesColocatedTests;
 use Tooling\GeneratorCommands\Concerns\GeneratorCommandCompatibility;
-use Tooling\GeneratorCommands\Concerns\SearchesClasses;
+use Tooling\GeneratorCommands\Concerns\SearchesAutoloadCaches;
 use Tooling\GeneratorCommands\Contracts\GeneratesFile;
 use Tooling\GeneratorCommands\References\GenericClass;
 
@@ -21,9 +22,14 @@ class MakeAction extends GeneratorCommand implements GeneratesFile
 {
     use CreatesColocatedTests;
     use GeneratorCommandCompatibility;
-    use SearchesClasses;
+    use SearchesAutoloadCaches;
 
     protected $type = 'Action';
+
+    protected function collector(): string
+    {
+        return All::class;
+    }
 
     public string $stub {
         get => __DIR__.'/../stubs/action.stub';
