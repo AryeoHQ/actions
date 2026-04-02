@@ -6,7 +6,6 @@ namespace Support\Actions\Concerns;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 
 trait AsAction
 {
@@ -15,7 +14,6 @@ trait AsAction
     use InteractsWithQueue;
     use Nowable;
     use Queueable;
-    use SerializesModels;
 
     public static function make(mixed ...$arguments): static
     {
