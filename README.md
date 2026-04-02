@@ -247,7 +247,8 @@ Actions work exactly like Laravel Jobs and support all queue features including 
 - `InteractsWithQueue` - Queue interaction methods
 - `Nowable` - Synchronous execution support
 - `Queueable` - Queue configuration
-- `SerializesModels` - Model serialization for queues
+
+> **Note:** `SerializesModels` is intentionally **not** included. Without it, Eloquent models passed to an action are serialized as-is — preserving the exact state at dispatch time rather than being re-fetched from the database when the job is processed. This ensures the worker operates on the data that was originally provided. If you prefer Laravel's default behavior of storing only the model identifier and rehydrating from the database at processing time, you can add `use \Illuminate\Queue\SerializesModels;` to your individual action classes.
 
 For detailed documentation on queue features, see the [Laravel Queue Documentation](https://laravel.com/docs/queues).
 

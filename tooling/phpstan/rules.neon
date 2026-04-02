@@ -24,6 +24,10 @@ services:
         tags:
             - phpstan.rules.rule
     -
+        class: Tooling\Actions\PhpStan\Rules\AsActionCannotUseSerializesModels
+        tags:
+            - phpstan.rules.rule
+    -
         class: Tooling\Actions\PhpStan\Rules\ActionHandleCannotBeCalledDirectly
         tags:
             - phpstan.rules.rule
