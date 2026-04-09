@@ -32,7 +32,7 @@ final class ActionMustUseAsAction extends \Tooling\PhpStan\Rules\Rule
     {
         $this->error(
             '`Action` instances must use `AsAction`.',
-            $node->getStartLine(),
+            $node->name?->getStartLine() ?? $node->getStartLine(),
             'actions.trait'
         );
     }

@@ -40,4 +40,15 @@ class ActionMustBeFinalTest extends RuleTestCase
             ],
         ]);
     }
+
+    #[Test]
+    public function it_fails_on_class_name_line_not_attribute_line(): void
+    {
+        $this->analyse([$this->getFixturePath('NotFinalActionWithAttribute.php')], [
+            [
+                '`Action` instances must be `final`.',
+                11,
+            ],
+        ]);
+    }
 }

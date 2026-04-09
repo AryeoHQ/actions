@@ -31,7 +31,7 @@ final class ActionMustBeFinal extends \Tooling\PhpStan\Rules\Rule
     {
         $this->error(
             '`Action` instances must be `final`.',
-            $node->getStartLine(),
+            $node->name?->getStartLine() ?? $node->getStartLine(),
             'actions.final'
         );
     }

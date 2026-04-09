@@ -31,7 +31,7 @@ final class ActionMustDefineHandleMethod extends \Tooling\PhpStan\Rules\Rule
     {
         $this->error(
             '`Action` instances must implement `handle()`.',
-            $node->getStartLine(),
+            $node->name?->getStartLine() ?? $node->getStartLine(),
             'actions.handle'
         );
     }
