@@ -39,4 +39,15 @@ class ActionMustDefineHandleMethodTest extends RuleTestCase
             ],
         ]);
     }
+
+    #[Test]
+    public function it_fails_on_class_name_line_not_attribute_line(): void
+    {
+        $this->analyse([$this->getFixturePath('MissingHandleMethodActionWithAttribute.php')], [
+            [
+                '`Action` instances must implement `handle()`.',
+                11,
+            ],
+        ]);
+    }
 }

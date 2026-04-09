@@ -42,4 +42,15 @@ class ActionCannotUseQueueableTest extends RuleTestCase
             ],
         ]);
     }
+
+    #[Test]
+    public function it_fails_on_trait_line_not_attribute_line(): void
+    {
+        $this->analyse([$this->getFixturePath('ActionWithQueueableAndAttribute.php')], [
+            [
+                '`Action` instances cannot use the `'.Queueable::class.'` trait.',
+                15,
+            ],
+        ]);
+    }
 }
