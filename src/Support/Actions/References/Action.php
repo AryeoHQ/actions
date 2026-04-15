@@ -12,4 +12,8 @@ class Action extends GenericClass
     public null|Stringable $subNamespace {
         get => str('Actions');
     }
+
+    public Stringable $stubPath {
+        get => str(__DIR__.'/stubs/action.stub');
+    }
 }

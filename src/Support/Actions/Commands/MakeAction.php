@@ -31,10 +31,6 @@ class MakeAction extends GeneratorCommand implements GeneratesFile
         return All::class;
     }
 
-    public string $stub {
-        get => __DIR__.'/../stubs/action.stub';
-    }
-
     public Stringable $nameInput {
         get => str($this->argument('name'));
     }
@@ -51,10 +47,10 @@ class MakeAction extends GeneratorCommand implements GeneratesFile
 
     public function handle()
     {
-        $this->action = new Action(
-            name: $this->nameInput,
-            baseNamespace: $this->classReference->namespace,
-        );
+        $this->action = resolve(Action::class, [
+            'name' => $this->nameInput,
+            'baseNamespace' => $this->classReference->namespace,
+        ]);
 
         return parent::handle();
     }
