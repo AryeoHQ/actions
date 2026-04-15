@@ -39,16 +39,3 @@ parameters:
         # Mockery's andReturnUsing is not properly recognized by PHPStan
         -
             message: '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::andReturnUsing\(\)#'
-        # method_exists() checks in Nowable are runtime opt-in hooks — PHPStan
-        # resolves $this to each concrete class and flags these as always-true/false
-        -
-            message: '#Call to function method_exists\(\) with .+ and .+(failed|succeeded).+ will always evaluate to (true|false)#'
-            path: ../../src/Support/Actions/Concerns/Nowable.php
-        # call_user_func in when() closures — PHPStan can't narrow callable validity through when()
-        -
-            message: '#Parameter \#1 \$callback of function call_user_func expects callable#'
-            path: ../../src/Support/Actions/Concerns/Nowable.php
-        # rescue() in Nowable::now() wraps a void closure — PHPStan can't resolve the template type
-        -
-            message: '#Unable to resolve the template type TValue in call to function rescue#'
-            path: ../../src/Support/Actions/Concerns/Nowable.php

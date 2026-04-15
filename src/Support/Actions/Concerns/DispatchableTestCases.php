@@ -179,4 +179,24 @@ trait DispatchableTestCases
 
         $this->assertNull(Context::get('execution_log'));
     }
+
+    #[Test]
+    public function it_does_not_run_succeeded_when_dispatch_faked(): void
+    {
+        WithSucceeded::fake();
+
+        WithSucceeded::make(Order::factory()->make())->dispatch();
+
+        $this->assertEmpty(Context::get('execution_log', []));
+    }
+
+    #[Test]
+    public function it_does_not_run_failed_when_dispatch_faked(): void
+    {
+        WithSucceeded::fake();
+
+        WithSucceeded::make(Order::factory()->make())->dispatch();
+
+        $this->assertEmpty(Context::get('execution_log', []));
+    }
 }
