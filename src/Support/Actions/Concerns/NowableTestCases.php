@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Support\Actions\Concerns;
 
+use Illuminate\Support\Facades\Context;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Tests\Fixtures\Support\Orders\Actions\Archive;
 use Tests\Fixtures\Support\Orders\Actions\Notify;
 use Tests\Fixtures\Support\Orders\Actions\Ship;
+use Tests\Fixtures\Support\Orders\Actions\WithFailed;
+use Tests\Fixtures\Support\Orders\Actions\WithFailedThatThrows;
+use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
 use Tests\Fixtures\Support\Orders\Order;
 
 trait NowableTestCases
@@ -269,9 +274,9 @@ trait NowableTestCases
     public function it_throws_exception_from_closure_in_and_return(): void
     {
         $order = Order::factory()->make();
-        Archive::fake()->andReturn(fn () => throw new \RuntimeException('Test exception'));
+        Archive::fake()->andReturn(fn () => throw new RuntimeException('Test exception'));
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Test exception');
 
         Archive::make($order)->now();
@@ -291,5 +296,56 @@ trait NowableTestCases
 
         $this->assertEquals('first-fake', $result1);
         $this->assertEquals('second-fake', $result2);
+    }
+
+    #[Test]
+    public function it_calls_succeeded_after_now_completes(): void
+    {
+        $order = Order::factory()->make();
+
+        $result = WithSucceeded::make($order)->now();
+
+        $this->assertEquals($order->name.': archived', $result);
+        $this->assertContains(WithSucceeded::class, Context::get('execution_log'));
+    }
+
+    #[Test]
+    public function it_calls_failed_when_now_throws(): void
+    {
+        try {
+            WithFailed::make()->now();
+        } catch (RuntimeException) {
+            // expected
+        }
+
+        $this->assertContains(WithFailed::class, Context::get('execution_log'));
+    }
+
+    #[Test]
+    public function it_rethrows_the_original_exception_after_calling_failed(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Action failed intentionally');
+
+        WithFailed::make()->now();
+    }
+
+    #[Test]
+    public function it_preserves_original_exception_when_failed_hook_throws(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Original exception');
+
+        WithFailedThatThrows::make()->now();
+    }
+
+    #[Test]
+    public function it_executes_now_without_error_when_action_has_no_lifecycle_hooks(): void
+    {
+        $order = Order::factory()->make();
+
+        $result = Archive::make($order)->now();
+
+        $this->assertEquals($order->name.': archived', $result);
     }
 }

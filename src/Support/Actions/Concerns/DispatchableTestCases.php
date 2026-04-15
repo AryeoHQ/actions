@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Support\Actions\Concerns;
 
 use Illuminate\Foundation\Bus\PendingDispatch;
+use Illuminate\Support\Facades\Context;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Fixtures\Support\Orders\Actions\Archive;
+use Tests\Fixtures\Support\Orders\Actions\WithFailedAndSucceeded;
+use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
+use Tests\Fixtures\Support\Orders\Middleware\WritesToContext;
 use Tests\Fixtures\Support\Orders\Order;
 
 trait DispatchableTestCases
@@ -112,5 +116,67 @@ trait DispatchableTestCases
         $orders->each(fn (Order $order) => Archive::make($order)->dispatch());
 
         Archive::assertFiredTimes($orders->count());
+    }
+
+    #[Test]
+    public function it_supports_through_while_preserving_required_middleware(): void
+    {
+        $order = Order::factory()->make();
+
+        WithSucceeded::make($order)->dispatch()->through([]);
+
+        $this->assertContains(WithSucceeded::class, Context::get('execution_log'));
+    }
+
+    #[Test]
+    public function it_runs_middleware_passed_to_through(): void
+    {
+        $order = Order::factory()->make();
+
+        WithSucceeded::make($order)->dispatch()->through([WritesToContext::class]);
+
+        $this->assertContains(WritesToContext::class, Context::get('execution_log'));
+    }
+
+    #[Test]
+    public function it_runs_consumer_middleware_before_succeeded(): void
+    {
+        $order = Order::factory()->make();
+
+        WithSucceeded::make($order)->dispatch()->through([WritesToContext::class]);
+
+        $this->assertSame([WritesToContext::class, WithSucceeded::class], Context::get('execution_log'));
+    }
+
+    #[Test]
+    public function it_calls_succeeded_after_dispatched_action_completes(): void
+    {
+        $order = Order::factory()->make();
+
+        WithSucceeded::make($order)->dispatch();
+
+        $this->assertContains(WithSucceeded::class, Context::get('execution_log'));
+    }
+
+    #[Test]
+    public function it_does_not_call_succeeded_when_dispatched_action_fails(): void
+    {
+        try {
+            WithFailedAndSucceeded::make()->dispatch();
+        } catch (\RuntimeException) {
+            // expected
+        }
+
+        $this->assertNotContains(WithFailedAndSucceeded::class.'::succeeded', Context::get('execution_log', []));
+    }
+
+    #[Test]
+    public function it_dispatches_without_error_when_action_has_no_lifecycle_hooks(): void
+    {
+        $order = Order::factory()->make();
+
+        Archive::make($order)->dispatch();
+
+        $this->assertNull(Context::get('execution_log'));
     }
 }

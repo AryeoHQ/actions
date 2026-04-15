@@ -1,0 +1,10 @@
+<?php
+
+namespace Illuminate\Foundation\Bus;
+
+/**
+ * @method $this through(mixed $middleware)
+ */
+class PendingDispatch
+{
+}
