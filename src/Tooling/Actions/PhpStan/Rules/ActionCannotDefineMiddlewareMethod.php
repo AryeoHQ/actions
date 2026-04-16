@@ -22,7 +22,7 @@ final class ActionCannotDefineMiddlewareMethod extends \Tooling\PhpStan\Rules\Ru
      */
     public function shouldHandle(Node $node, Scope $scope): bool
     {
-        return $this->inherits($node, Action::class) && $this->definesMiddlewareMethod($node);
+        return $this->inherits($node, Action::class) && $this->hasMethod($node, 'middleware');
     }
 
     /**
@@ -35,17 +35,6 @@ final class ActionCannotDefineMiddlewareMethod extends \Tooling\PhpStan\Rules\Ru
             $this->findMiddlewareMethodLine($node) ?? $node->name?->getStartLine() ?? $node->getStartLine(),
             'actions.middleware'
         );
-    }
-
-    private function definesMiddlewareMethod(Class_ $node): bool
-    {
-        foreach ($node->stmts as $stmt) {
-            if ($stmt instanceof ClassMethod && $stmt->name->toString() === 'middleware') {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function findMiddlewareMethodLine(Class_ $node): null|int
