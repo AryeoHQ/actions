@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Context;
+use Support\Actions\Contracts\Action;
 
 final class NonActionQueueable implements ShouldQueue
 {
@@ -16,6 +17,6 @@ final class NonActionQueueable implements ShouldQueue
 
     public function handle(): void
     {
-        Context::push('execution_log', self::class);
+        Context::push(Action::class, self::class);
     }
 }

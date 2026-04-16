@@ -7,12 +7,18 @@ namespace Support\Actions\Concerns;
 use Illuminate\Support\Facades\Context;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
+use Support\Actions\Contracts\Action;
 use Tests\Fixtures\Support\Orders\Actions\Archive;
 use Tests\Fixtures\Support\Orders\Actions\Notify;
 use Tests\Fixtures\Support\Orders\Actions\Ship;
 use Tests\Fixtures\Support\Orders\Actions\WithFailed;
+use Tests\Fixtures\Support\Orders\Actions\WithFailedAndMiddleware;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedThatThrows;
+use Tests\Fixtures\Support\Orders\Actions\WithMiddleware;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
+use Tests\Fixtures\Support\Orders\Actions\WithSucceededAndMiddleware;
+use Tests\Fixtures\Support\Orders\Middleware\WritesToContext;
+use Tests\Fixtures\Support\Orders\Middleware\WritesToContextBidirectional;
 use Tests\Fixtures\Support\Orders\Order;
 
 trait NowableTestCases
@@ -306,7 +312,7 @@ trait NowableTestCases
         $result = WithSucceeded::make($order)->now();
 
         $this->assertEquals($order->name.': archived', $result);
-        $this->assertContains(WithSucceeded::class, Context::get('execution_log'));
+        $this->assertContains(WithSucceeded::class, Context::get(Action::class));
     }
 
     #[Test]
@@ -318,7 +324,7 @@ trait NowableTestCases
             // expected
         }
 
-        $this->assertContains(WithFailed::class, Context::get('execution_log'));
+        $this->assertContains(WithFailed::class, Context::get(Action::class));
     }
 
     #[Test]
@@ -356,7 +362,7 @@ trait NowableTestCases
 
         WithSucceeded::make(Order::factory()->make())->now();
 
-        $this->assertEmpty(Context::get('execution_log', []));
+        $this->assertEmpty(Context::get(Action::class, []));
     }
 
     #[Test]
@@ -366,6 +372,73 @@ trait NowableTestCases
 
         WithSucceeded::make(Order::factory()->make())->now();
 
-        $this->assertEmpty(Context::get('execution_log', []));
+        $this->assertEmpty(Context::get(Action::class, []));
+    }
+
+    #[Test]
+    public function it_runs_middleware_from_actions_prepare_method_now(): void
+    {
+        $order = Order::factory()->make();
+
+        WithMiddleware::make($order)->now();
+
+        $this->assertContains(WritesToContext::class, Context::get(Action::class));
+    }
+
+    #[Test]
+    public function it_runs_lifecycle_in_correct_order_now(): void
+    {
+        WithSucceededAndMiddleware::make()->now();
+
+        $this->assertSame([
+            WritesToContextBidirectional::IN,
+            WithSucceededAndMiddleware::HANDLE,
+            WritesToContextBidirectional::OUT,
+            WithSucceededAndMiddleware::SUCCEEDED,
+        ], Context::get(Action::class));
+    }
+
+    #[Test]
+    public function it_runs_failed_lifecycle_in_correct_order_now(): void
+    {
+        try {
+            WithFailedAndMiddleware::make()->now();
+        } catch (RuntimeException) {
+            // expected
+        }
+
+        $this->assertSame([
+            WritesToContextBidirectional::IN,
+            WithFailedAndMiddleware::HANDLE,
+            WithFailedAndMiddleware::FAILED,
+        ], Context::get(Action::class));
+    }
+
+    #[Test]
+    public function it_calls_succeeded_only_once_per_now(): void
+    {
+        $order = Order::factory()->make();
+
+        tap(
+            WithSucceeded::make($order),
+            function (WithSucceeded $action) {
+                $action->now();
+                $action->now();
+                $action->now();
+            }
+        );
+
+        $this->assertCount(3, Context::get(Action::class));
+        $this->assertContains(WithSucceeded::class, Context::get(Action::class));
+    }
+
+    #[Test]
+    public function it_does_not_call_prepare_when_now_faked(): void
+    {
+        WithMiddleware::fake();
+
+        WithMiddleware::make(Order::factory()->make())->now();
+
+        $this->assertEmpty(Context::get(Action::class, []));
     }
 }

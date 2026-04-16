@@ -27,6 +27,6 @@ final class WithSucceeded implements Action
 
     public function succeeded(): void
     {
-        Context::push('execution_log', self::class);
+        Context::push(Action::class, self::class);
     }
 }

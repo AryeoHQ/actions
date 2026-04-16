@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Support\Actions\Bus;
 
+use Illuminate\Pipeline\Pipeline;
 use Support\Actions\Contracts\Action;
-use Support\Actions\Middleware\RunSucceededHook;
+use Support\Actions\Middleware\RunFailed;
+use Support\Actions\Middleware\RunSucceeded;
 
 class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
 {
@@ -23,28 +25,23 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
      */
     public function dispatchNow($command, $handler = null)
     {
-        if (! $command instanceof Action || $command->job) {
-            return $this->decorated->dispatchNow($command, $handler);
-        }
-
-        try {
-            $result = $this->decorated->dispatchNow($command, $handler);
-        } catch (\Throwable $throwable) {
-            $this->runHook($command, 'failed', $throwable);
-
-            throw $throwable;
-        }
-
-        $this->runHook($command, 'succeeded');
-
-        return $result;
-    }
-
-    private function runHook(object $command, string $method, mixed ...$arguments): void
-    {
-        if (method_exists($command, $method)) {
-            rescue(fn () => $command->$method(...$arguments), report: true);
-        }
+        /**
+         * `dispatchSync` sets `$command->job` and eventually calls to `dispatchNow`, we need
+         * to avoid duplicating calls to `prepare()` and `prependMiddleware()` and can
+         * safely send to the decorated dispatcher as we've already prepared it.
+         */
+        return match (! $command instanceof Action || $command->job) {
+            true => $this->decorated->dispatchNow($command, $handler),
+            false => (new Pipeline(app()))->send(
+                $this->prepareToDispatch($command)->prependMiddleware([RunSucceeded::class, RunFailed::class], $command)
+            )->through(
+                $command->middleware
+            )->finally(
+                fn () => $command->job = null
+            )->then(
+                fn ($command) => $this->decorated->dispatchNow($command, $handler)
+            ),
+        };
     }
 
     /**
@@ -53,7 +50,10 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
      */
     public function dispatch($command)
     {
-        $this->attachRequiredMiddlewareTo($command);
+        when(
+            $command instanceof Action,
+            fn () => $this->prepareToDispatch($command)->prependMiddleware([RunSucceeded::class], $command)
+        );
 
         return $this->decorated->dispatch($command);
     }
@@ -65,7 +65,10 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
      */
     public function dispatchSync($command, $handler = null)
     {
-        $this->attachRequiredMiddlewareTo($command);
+        when(
+            $command instanceof Action,
+            fn () => $this->prepareToDispatch($command)->prependMiddleware([RunSucceeded::class], $command),
+        );
 
         return $this->decorated->dispatchSync($command, $handler);
     }
@@ -143,21 +146,48 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
         return $this->decorated->$method(...$parameters);
     }
 
-    private function attachRequiredMiddlewareTo(mixed $command): void
+    private function prepareToDispatch(Action $command): self
     {
-        if (! $command instanceof Action) {
-            return;
-        }
+        when(
+            method_exists($command, 'prepare'),
+            fn () => call_user_func([$command, 'prepare'])
+        );
 
-        $required = [RunSucceededHook::class];
+        return $this;
+    }
 
+    /**
+     * @param  array<string>  $classes
+     */
+    private function prependMiddleware(array $classes, Action $command): Action
+    {
+        return $command->through([
+            ...$classes,
+            ...$this->removeMiddleware($classes, $command),
+        ]);
+    }
+
+    /**
+     * @param  array<string>  $classes
+     */
+    private function appendMiddleware(array $classes, Action $command): void
+    {
         $command->middleware = [
-            ...array_filter($command->middleware, fn ($middleware) => match (true) {
-                is_string($middleware) => ! in_array($middleware, $required, true),
-                is_object($middleware) => ! in_array($middleware::class, $required, true),
-                default => true,
-            }),
-            ...$required,
+            ...$this->removeMiddleware($classes, $command),
+            ...$classes,
         ];
+    }
+
+    /**
+     * @param  array<string>  $classes
+     * @return array<mixed>
+     */
+    private function removeMiddleware(array $classes, Action $command): array
+    {
+        return array_filter($command->middleware, fn ($m) => match (true) {
+            is_string($m) => ! in_array($m, $classes, true),
+            is_object($m) => ! in_array($m::class, $classes, true),
+            default => true,
+        });
     }
 }

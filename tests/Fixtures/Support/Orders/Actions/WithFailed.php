@@ -20,6 +20,6 @@ final class WithFailed implements Action
 
     public function failed(\Throwable $e): void
     {
-        Context::push('execution_log', self::class);
+        Context::push(Action::class, self::class);
     }
 }

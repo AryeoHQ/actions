@@ -9,7 +9,7 @@ use Support\Actions\Contracts\Action;
 use Tests\Fixtures\Support\Orders\Middleware\WritesToContext;
 use Tests\Fixtures\Support\Orders\Order;
 
-final class WithMiddlewareMethod implements Action
+final class WithMiddleware implements Action
 {
     use AsAction;
 
@@ -20,10 +20,9 @@ final class WithMiddlewareMethod implements Action
         $this->order = $order;
     }
 
-    /** @return array<int, class-string> */
-    public function middleware(): array
+    public function prepare(): void
     {
-        return [WritesToContext::class];
+        $this->through(WritesToContext::class);
     }
 
     public function handle(): string

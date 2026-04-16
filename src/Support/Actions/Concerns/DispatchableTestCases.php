@@ -7,11 +7,14 @@ namespace Support\Actions\Concerns;
 use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Support\Facades\Context;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Actions\Contracts\Action;
 use Tests\Fixtures\Support\Orders\Actions\Archive;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedAndSucceeded;
-use Tests\Fixtures\Support\Orders\Actions\WithMiddlewareMethod;
+use Tests\Fixtures\Support\Orders\Actions\WithMiddleware;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
+use Tests\Fixtures\Support\Orders\Actions\WithSucceededAndMiddleware;
 use Tests\Fixtures\Support\Orders\Middleware\WritesToContext;
+use Tests\Fixtures\Support\Orders\Middleware\WritesToContextBidirectional;
 use Tests\Fixtures\Support\Orders\Order;
 
 trait DispatchableTestCases
@@ -126,7 +129,7 @@ trait DispatchableTestCases
 
         WithSucceeded::make($order)->dispatch()->through([]);
 
-        $this->assertContains(WithSucceeded::class, Context::get('execution_log'));
+        $this->assertContains(WithSucceeded::class, Context::get(Action::class));
     }
 
     #[Test]
@@ -136,7 +139,7 @@ trait DispatchableTestCases
 
         WithSucceeded::make($order)->dispatch()->through([WritesToContext::class]);
 
-        $this->assertContains(WritesToContext::class, Context::get('execution_log'));
+        $this->assertContains(WritesToContext::class, Context::get(Action::class));
     }
 
     #[Test]
@@ -146,17 +149,17 @@ trait DispatchableTestCases
 
         WithSucceeded::make($order)->dispatch()->through([WritesToContext::class]);
 
-        $this->assertSame([WritesToContext::class, WithSucceeded::class], Context::get('execution_log'));
+        $this->assertSame([WritesToContext::class, WithSucceeded::class], Context::get(Action::class));
     }
 
     #[Test]
-    public function it_runs_middleware_from_actions_middleware_method(): void
+    public function it_runs_middleware_from_actions_prepare_method(): void
     {
         $order = Order::factory()->make();
 
-        WithMiddlewareMethod::make($order)->dispatch();
+        WithMiddleware::make($order)->dispatch();
 
-        $this->assertContains(WritesToContext::class, Context::get('execution_log'));
+        $this->assertContains(WritesToContext::class, Context::get(Action::class));
     }
 
     #[Test]
@@ -166,7 +169,7 @@ trait DispatchableTestCases
 
         WithSucceeded::make($order)->dispatch();
 
-        $this->assertContains(WithSucceeded::class, Context::get('execution_log'));
+        $this->assertContains(WithSucceeded::class, Context::get(Action::class));
     }
 
     #[Test]
@@ -183,8 +186,8 @@ trait DispatchableTestCases
             }
         );
 
-        $this->assertCount(3, Context::get('execution_log'));
-        $this->assertContains(WithSucceeded::class, Context::get('execution_log'));
+        $this->assertCount(3, Context::get(Action::class));
+        $this->assertContains(WithSucceeded::class, Context::get(Action::class));
     }
 
     #[Test]
@@ -196,7 +199,7 @@ trait DispatchableTestCases
             // expected
         }
 
-        $this->assertNotContains(WithFailedAndSucceeded::class.'::succeeded', Context::get('execution_log', []));
+        $this->assertNotContains(WithFailedAndSucceeded::SUCCEEDED, Context::get(Action::class, []));
     }
 
     #[Test]
@@ -206,7 +209,7 @@ trait DispatchableTestCases
 
         Archive::make($order)->dispatch();
 
-        $this->assertNull(Context::get('execution_log'));
+        $this->assertNull(Context::get(Action::class));
     }
 
     #[Test]
@@ -216,7 +219,7 @@ trait DispatchableTestCases
 
         WithSucceeded::make(Order::factory()->make())->dispatch();
 
-        $this->assertEmpty(Context::get('execution_log', []));
+        $this->assertEmpty(Context::get(Action::class, []));
     }
 
     #[Test]
@@ -226,6 +229,41 @@ trait DispatchableTestCases
 
         WithSucceeded::make(Order::factory()->make())->dispatch();
 
-        $this->assertEmpty(Context::get('execution_log', []));
+        $this->assertEmpty(Context::get(Action::class, []));
+    }
+
+    #[Test]
+    public function it_runs_lifecycle_in_correct_order_dispatch(): void
+    {
+        WithSucceededAndMiddleware::make()->dispatch();
+
+        $this->assertSame([
+            WritesToContextBidirectional::IN,
+            WithSucceededAndMiddleware::HANDLE,
+            WritesToContextBidirectional::OUT,
+            WithSucceededAndMiddleware::SUCCEEDED,
+        ], Context::get(Action::class));
+    }
+
+    #[Test]
+    public function it_calls_failed_when_dispatched_action_throws(): void
+    {
+        try {
+            WithFailedAndSucceeded::make()->dispatch();
+        } catch (\RuntimeException) {
+            // expected
+        }
+
+        $this->assertContains(WithFailedAndSucceeded::FAILED, Context::get(Action::class, []));
+    }
+
+    #[Test]
+    public function it_does_not_call_prepare_when_dispatch_faked(): void
+    {
+        WithMiddleware::fake();
+
+        WithMiddleware::make(Order::factory()->make())->dispatch();
+
+        $this->assertEmpty(Context::get(Action::class, []));
     }
 }
