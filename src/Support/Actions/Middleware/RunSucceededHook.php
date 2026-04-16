@@ -11,7 +11,7 @@ class RunSucceededHook
         $next($command);
 
         if (method_exists($command, 'succeeded')) {
-            rescue(fn () => $command->succeeded());
+            rescue(fn () => $command->succeeded(), report: true);
         }
     }
 }

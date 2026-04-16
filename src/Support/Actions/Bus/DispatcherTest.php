@@ -9,8 +9,10 @@ use Illuminate\Support\Facades\Context;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Support\Actions\Middleware\RunSucceededHook;
+use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
 use Tests\Fixtures\Support\Orders\NonAction;
 use Tests\Fixtures\Support\Orders\NonActionQueueable;
+use Tests\Fixtures\Support\Orders\Order;
 use Tests\TestCase;
 
 #[CoversClass(Dispatcher::class)]
@@ -56,5 +58,15 @@ class DispatcherTest extends TestCase
         $this->assertInstanceOf(Dispatcher::class, $dispatcher);
 
         $this->assertFalse($dispatcher->hasCommandHandler(new NonActionQueueable));
+    }
+
+    #[Test]
+    public function it_attaches_required_middleware_on_dispatch_sync(): void
+    {
+        $order = Order::factory()->make();
+
+        $this->app->make(\Illuminate\Contracts\Bus\Dispatcher::class)->dispatchSync(WithSucceeded::make($order));
+
+        $this->assertContains(WithSucceeded::class, Context::get('execution_log'));
     }
 }

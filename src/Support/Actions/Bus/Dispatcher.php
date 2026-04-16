@@ -53,18 +53,7 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
      */
     public function dispatch($command)
     {
-        if ($command instanceof Action) {
-            $required = [RunSucceededHook::class];
-
-            $command->middleware = [
-                ...array_filter($command->middleware, fn ($middleware) => match (true) {
-                    is_string($middleware) => ! in_array($middleware, $required, true),
-                    is_object($middleware) => ! in_array($middleware::class, $required, true),
-                    default => true,
-                }),
-                ...$required,
-            ];
-        }
+        $this->attachRequiredMiddlewareTo($command);
 
         return $this->decorated->dispatch($command);
     }
@@ -76,6 +65,8 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
      */
     public function dispatchSync($command, $handler = null)
     {
+        $this->attachRequiredMiddlewareTo($command);
+
         return $this->decorated->dispatchSync($command, $handler);
     }
 
@@ -150,5 +141,23 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
     public function __call(string $method, array $parameters): mixed
     {
         return $this->decorated->$method(...$parameters);
+    }
+
+    private function attachRequiredMiddlewareTo(mixed $command): void
+    {
+        if (! $command instanceof Action) {
+            return;
+        }
+
+        $required = [RunSucceededHook::class];
+
+        $command->middleware = [
+            ...array_filter($command->middleware, fn ($middleware) => match (true) {
+                is_string($middleware) => ! in_array($middleware, $required, true),
+                is_object($middleware) => ! in_array($middleware::class, $required, true),
+                default => true,
+            }),
+            ...$required,
+        ];
     }
 }
