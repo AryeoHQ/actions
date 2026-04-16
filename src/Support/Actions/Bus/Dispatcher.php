@@ -26,9 +26,10 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
     public function dispatchNow($command, $handler = null)
     {
         /**
-         * `dispatchSync` sets `$command->job` and eventually calls to `dispatchNow`, we need
-         * to avoid duplicating calls to `prepare()` and `prependMiddleware()` and can
-         * safely send to the decorated dispatcher as we've already prepared it.
+         * Laravel's `dispatchNow()` sets `$command->job` before executing. The `$command->job`
+         * check acts as a re-entry guard so we only prepare and wrap the command with lifecycle
+         * middleware once. The `->finally()` below clears it after the pipeline completes,
+         * allowing for subsequent execution of the same command instance if needed.
          */
         return match (! $command instanceof Action || $command->job) {
             true => $this->decorated->dispatchNow($command, $handler),
