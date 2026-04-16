@@ -7,6 +7,7 @@ namespace Tooling\Actions\PhpStan\Rules;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Tooling\Concerns\GetsFixtures;
 
 /**
  * @extends RuleTestCase<ActionMustBeFinal>
@@ -14,14 +15,11 @@ use PHPUnit\Framework\Attributes\Test;
 #[CoversClass(ActionMustBeFinal::class)]
 class ActionMustBeFinalTest extends RuleTestCase
 {
+    use GetsFixtures;
+
     protected function getRule(): ActionMustBeFinal
     {
         return new ActionMustBeFinal;
-    }
-
-    private function getFixturePath(string $filename): string
-    {
-        return __DIR__.'/../../../../../tests/Fixtures/Tooling/'.$filename;
     }
 
     #[Test]
