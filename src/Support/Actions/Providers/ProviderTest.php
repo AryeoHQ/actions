@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Support\Actions\Providers;
 
-use Illuminate\Contracts\Bus\Dispatcher as BusDispatcher;
 use Illuminate\Support\Facades\Artisan;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -25,6 +24,14 @@ class ProviderTest extends TestCase
     #[Test]
     public function it_decorates_the_bus_dispatcher(): void
     {
-        $this->assertInstanceOf(Dispatcher::class, $this->app->make(BusDispatcher::class));
+        $this->assertInstanceOf(
+            Dispatcher::class,
+            $this->app->make(\Illuminate\Bus\Dispatcher::class)
+        );
+
+        $this->assertInstanceOf(
+            Dispatcher::class,
+            \Illuminate\Support\Facades\Bus::getFacadeRoot()
+        );
     }
 }
