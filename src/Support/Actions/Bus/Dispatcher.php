@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Support\Actions\Bus;
 
 use Support\Actions\Contracts\Action;
+use Support\Actions\Middleware\RunSucceededHook;
 
 class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
 {
@@ -52,6 +53,19 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
      */
     public function dispatch($command)
     {
+        if ($command instanceof Action) {
+            $required = [RunSucceededHook::class];
+
+            $command->middleware = [
+                ...array_filter($command->middleware, fn ($middleware) => match (true) {
+                    is_string($middleware) => ! in_array($middleware, $required, true),
+                    is_object($middleware) => ! in_array($middleware::class, $required, true),
+                    default => true,
+                }),
+                ...$required,
+            ];
+        }
+
         return $this->decorated->dispatch($command);
     }
 
@@ -111,8 +125,10 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
     }
 
     /**
-     * @param  \Illuminate\Support\Collection|array<mixed>  $jobs
+     * @param  \Illuminate\Support\Collection<array-key, mixed>|array<mixed>  $jobs
      * @return \Illuminate\Bus\PendingBatch
+     *
+     * @phpstan-ignore method.childParameterType (interface does not declare Collection generic types)
      */
     public function batch($jobs)
     {

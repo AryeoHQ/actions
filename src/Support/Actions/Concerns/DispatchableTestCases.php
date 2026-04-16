@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Context;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Fixtures\Support\Orders\Actions\Archive;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedAndSucceeded;
+use Tests\Fixtures\Support\Orders\Actions\WithMiddlewareMethod;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
 use Tests\Fixtures\Support\Orders\Middleware\WritesToContext;
 use Tests\Fixtures\Support\Orders\Order;
@@ -149,12 +150,40 @@ trait DispatchableTestCases
     }
 
     #[Test]
+    public function it_runs_middleware_from_actions_middleware_method(): void
+    {
+        $order = Order::factory()->make();
+
+        WithMiddlewareMethod::make($order)->dispatch();
+
+        $this->assertContains(WritesToContext::class, Context::get('execution_log'));
+    }
+
+    #[Test]
     public function it_calls_succeeded_after_dispatched_action_completes(): void
     {
         $order = Order::factory()->make();
 
         WithSucceeded::make($order)->dispatch();
 
+        $this->assertContains(WithSucceeded::class, Context::get('execution_log'));
+    }
+
+    #[Test]
+    public function it_calls_succeeded_only_once_per_dispatch(): void
+    {
+        $order = Order::factory()->make();
+
+        tap(
+            WithSucceeded::make($order),
+            function (WithSucceeded $action) {
+                $action->dispatch();
+                $action->dispatch();
+                $action->dispatch();
+            }
+        );
+
+        $this->assertCount(3, Context::get('execution_log'));
         $this->assertContains(WithSucceeded::class, Context::get('execution_log'));
     }
 

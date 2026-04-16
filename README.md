@@ -238,6 +238,39 @@ ProcessOrder::assertFiredTimes(3);
 
 > **Note:** Fakes are automatically managed using Laravel's context system and work seamlessly with Laravel's Bus fake. The fake system handles both synchronous (`now()`) and asynchronous (`dispatch()`) executions.
 
+## Lifecycle Hooks
+
+Actions support optional `succeeded()` and `failed()` lifecycle hooks that are called automatically in both the synchronous (`now()`) and asynchronous (`dispatch()`) flows:
+
+```php
+final class ProcessOrder implements Action
+{
+    use AsAction;
+
+    public readonly Order $order;
+
+    public function __construct(Order $order)
+    {
+        $this->order = $order;
+    }
+
+    public function handle(): TrackingNumber
+    {
+        // Business logic
+    }
+
+    public function succeeded(): void
+    {
+        // Called after handle() completes successfully
+    }
+
+    public function failed(\Throwable $e): void
+    {
+        // Called when handle() throws an exception
+    }
+}
+```
+
 ## Queue Features
 
 Actions work exactly like Laravel Jobs and support all queue features including batching, chaining, middleware, rate limiting, unique jobs, encrypted jobs, and lifecycle methods. The `AsAction` trait includes:
