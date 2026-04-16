@@ -9,6 +9,7 @@ use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Tooling\Concerns\GetsFixtures;
 
 /**
  * @extends RuleTestCase<ActionCannotUseDispatchable>
@@ -16,14 +17,11 @@ use PHPUnit\Framework\Attributes\Test;
 #[CoversClass(ActionCannotUseDispatchable::class)]
 class ActionCannotUseDispatchableTest extends RuleTestCase
 {
+    use GetsFixtures;
+
     protected function getRule(): Rule
     {
         return new ActionCannotUseDispatchable;
-    }
-
-    private function getFixturePath(string $filename): string
-    {
-        return __DIR__.'/../../../../../tests/Fixtures/Tooling/'.$filename;
     }
 
     #[Test]

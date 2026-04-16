@@ -238,6 +238,39 @@ ProcessOrder::assertFiredTimes(3);
 
 > **Note:** Fakes are automatically managed using Laravel's context system and work seamlessly with Laravel's Bus fake. The fake system handles both synchronous (`now()`) and asynchronous (`dispatch()`) executions.
 
+## Lifecycle Hooks
+
+Actions support optional `succeeded()` and `failed()` lifecycle hooks that are called automatically in both the synchronous (`now()`) and asynchronous (`dispatch()`) flows:
+
+```php
+final class ProcessOrder implements Action
+{
+    use AsAction;
+
+    public readonly Order $order;
+
+    public function __construct(Order $order)
+    {
+        $this->order = $order;
+    }
+
+    public function handle(): TrackingNumber
+    {
+        // Business logic
+    }
+
+    public function succeeded(): void
+    {
+        // Called after handle() completes successfully
+    }
+
+    public function failed(\Throwable $e): void
+    {
+        // Called when handle() throws an exception
+    }
+}
+```
+
 ## Queue Features
 
 Actions work exactly like Laravel Jobs and support all queue features including batching, chaining, middleware, rate limiting, unique jobs, encrypted jobs, and lifecycle methods. The `AsAction` trait includes:
@@ -252,6 +285,41 @@ Actions work exactly like Laravel Jobs and support all queue features including 
 
 For detailed documentation on queue features, see the [Laravel Queue Documentation](https://laravel.com/docs/queues).
 
+### Middleware
+
+Actions support middleware through the `$middleware` property. You can set middleware statically in the property declaration or dynamically using an optional `prepare()` method:
+
+```php
+final class ProcessOrder implements Action
+{
+    use AsAction;
+
+    public readonly Order $order;
+
+    public function __construct(Order $order)
+    {
+        $this->order = $order;
+    }
+
+    public function prepare(): void
+    {
+        $this->through([
+            new RateLimited('orders'),
+            new WithoutOverlapping($this->order->id),
+        ]);
+    }
+
+    public function handle(): TrackingNumber
+    {
+        // Business logic
+    }
+}
+```
+
+The `prepare()` method is called automatically before each dispatch — in `now()`, `dispatch()`, and `dispatchSync()` paths. It provides a clean place to configure middleware that depends on constructor arguments, without cluttering the constructor. For queued dispatches, `prepare()` runs before the job is sent to the queue, and the resulting `$middleware` property serializes with the job.
+
+> **Important:** Actions cannot define a `middleware()` method. This restriction ensures that lifecycle hooks (`succeeded()`, `failed()`) always wrap the full middleware + handle lifecycle consistently across all dispatch paths. Use the `$middleware` property, `prepare()`, or `through()` instead.
+
 ## Static Analysis
 
 PHPStan rules are automatically registered into tooling to ensure Actions follow the implementation standards:
@@ -262,6 +330,7 @@ PHPStan rules are automatically registered into tooling to ensure Actions follow
 - Actions cannot use the `Dispatchable` trait (ActionCannotUseDispatchable)
 - Actions cannot use the `Queueable` trait (ActionCannotUseQueueable)
 - The `handle()` method cannot be called directly (ActionHandleCannotBeCalledDirectly)
+- Actions cannot define a `middleware()` method (ActionCannotDefineMiddlewareMethod)
 
 ## Rector
 

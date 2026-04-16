@@ -7,19 +7,17 @@ namespace Tooling\Actions\PhpStan\Rules;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Tooling\Concerns\GetsFixtures;
 
 /** @extends RuleTestCase<AsActionMustImplementAction> */
 #[CoversClass(AsActionMustImplementAction::class)]
 class AsActionMustImplementActionTest extends RuleTestCase
 {
+    use GetsFixtures;
+
     protected function getRule(): AsActionMustImplementAction
     {
         return new AsActionMustImplementAction;
-    }
-
-    private function getFixturePath(string $filename): string
-    {
-        return __DIR__.'/../../../../../tests/Fixtures/Tooling/'.$filename;
     }
 
     #[Test]

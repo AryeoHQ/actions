@@ -31,9 +31,22 @@ services:
         class: Tooling\Actions\PhpStan\Rules\ActionHandleCannotBeCalledDirectly
         tags:
             - phpstan.rules.rule
+    -
+        class: Tooling\Actions\PhpStan\Rules\ActionCannotDefineMiddlewareMethod
+        tags:
+            - phpstan.rules.rule
 
 parameters:
+    stubFiles:
+        - stubs/PendingDispatch.stub
     ignoreErrors:
+        # Action contract is an interface — $job and $middleware are provided by traits at runtime
+        -
+            message: '#Access to an undefined property Support\\Actions\\Contracts\\Action::\$(job|middleware)#'
+            path: ../../src/Support/Actions/Bus/Dispatcher.php
         # Mockery's andReturnUsing is not properly recognized by PHPStan
         -
             message: '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::andReturnUsing\(\)#'
+        # Laravel's Queueable::through() docblock declares array|object but accepts string — upstream bug
+        -
+            message: '#Parameter \#1 \$middleware of method .+::through\(\) expects array\|object, string given#'

@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Support\Actions\Concerns;
 
+use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\PendingDispatch;
+use Illuminate\Queue\InteractsWithQueue;
 
 trait Dispatchable
 {
+    use InteractsWithQueue;
+    use Queueable;
+
     public function dispatch(): PendingDispatch
     {
         return new PendingDispatch($this);
