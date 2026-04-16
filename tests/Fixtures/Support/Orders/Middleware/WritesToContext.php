@@ -9,10 +9,10 @@ use Support\Actions\Contracts\Action;
 
 final class WritesToContext
 {
-    public function handle(object $command, callable $next): void
+    public function handle(object $command, callable $next): mixed
     {
         Context::push(Action::class, self::class);
 
-        $next($command);
+        return $next($command);
     }
 }
