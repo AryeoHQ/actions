@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Context;
 use PHPUnit\Framework\Attributes\Test;
 use Support\Actions\Contracts\Action;
 use Tests\Fixtures\Support\Orders\Actions\Archive;
+use Tests\Fixtures\Support\Orders\Actions\WithFailed;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedAndSucceeded;
 use Tests\Fixtures\Support\Orders\Actions\WithMiddleware;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
@@ -225,9 +226,9 @@ trait DispatchableTestCases
     #[Test]
     public function it_does_not_run_failed_when_dispatch_faked(): void
     {
-        WithSucceeded::fake();
+        WithFailed::fake();
 
-        WithSucceeded::make(Order::factory()->make())->dispatch();
+        WithFailed::make()->dispatch();
 
         $this->assertEmpty(Context::get(Action::class, []));
     }

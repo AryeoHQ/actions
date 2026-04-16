@@ -368,9 +368,9 @@ trait NowableTestCases
     #[Test]
     public function it_does_not_run_failed_when_now_faked(): void
     {
-        WithSucceeded::fake();
+        WithFailed::fake();
 
-        WithSucceeded::make(Order::factory()->make())->now();
+        WithFailed::make()->now();
 
         $this->assertEmpty(Context::get(Action::class, []));
     }
