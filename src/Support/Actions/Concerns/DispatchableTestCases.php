@@ -9,13 +9,8 @@ use Illuminate\Support\Facades\Context;
 use PHPUnit\Framework\Attributes\Test;
 use Support\Actions\Contracts\Action;
 use Tests\Fixtures\Support\Orders\Actions\Archive;
-use Tests\Fixtures\Support\Orders\Actions\WithFailed;
-use Tests\Fixtures\Support\Orders\Actions\WithFailedAndSucceeded;
-use Tests\Fixtures\Support\Orders\Actions\WithMiddleware;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
-use Tests\Fixtures\Support\Orders\Actions\WithSucceededAndMiddleware;
 use Tests\Fixtures\Support\Orders\Middleware\WritesToContext;
-use Tests\Fixtures\Support\Orders\Middleware\WritesToContextBidirectional;
 use Tests\Fixtures\Support\Orders\Order;
 
 trait DispatchableTestCases
@@ -151,120 +146,5 @@ trait DispatchableTestCases
         WithSucceeded::make($order)->dispatch()->through([WritesToContext::class]);
 
         $this->assertSame([WritesToContext::class, WithSucceeded::class], Context::get(Action::class));
-    }
-
-    #[Test]
-    public function it_runs_middleware_from_actions_prepare_method(): void
-    {
-        $order = Order::factory()->make();
-
-        WithMiddleware::make($order)->dispatch();
-
-        $this->assertContains(WritesToContext::class, Context::get(Action::class));
-    }
-
-    #[Test]
-    public function it_calls_succeeded_after_dispatched_action_completes(): void
-    {
-        $order = Order::factory()->make();
-
-        WithSucceeded::make($order)->dispatch();
-
-        $this->assertContains(WithSucceeded::class, Context::get(Action::class));
-    }
-
-    #[Test]
-    public function it_calls_succeeded_only_once_per_dispatch(): void
-    {
-        $order = Order::factory()->make();
-
-        tap(
-            WithSucceeded::make($order),
-            function (WithSucceeded $action) {
-                $action->dispatch();
-                $action->dispatch();
-                $action->dispatch();
-            }
-        );
-
-        $this->assertCount(3, Context::get(Action::class));
-        $this->assertContains(WithSucceeded::class, Context::get(Action::class));
-    }
-
-    #[Test]
-    public function it_does_not_call_succeeded_when_dispatched_action_fails(): void
-    {
-        try {
-            WithFailedAndSucceeded::make()->dispatch();
-        } catch (\RuntimeException) {
-            // expected
-        }
-
-        $this->assertNotContains(WithFailedAndSucceeded::SUCCEEDED, Context::get(Action::class, []));
-    }
-
-    #[Test]
-    public function it_dispatches_without_error_when_action_has_no_lifecycle_hooks(): void
-    {
-        $order = Order::factory()->make();
-
-        Archive::make($order)->dispatch();
-
-        $this->assertNull(Context::get(Action::class));
-    }
-
-    #[Test]
-    public function it_does_not_run_succeeded_when_dispatch_faked(): void
-    {
-        WithSucceeded::fake();
-
-        WithSucceeded::make(Order::factory()->make())->dispatch();
-
-        $this->assertEmpty(Context::get(Action::class, []));
-    }
-
-    #[Test]
-    public function it_does_not_run_failed_when_dispatch_faked(): void
-    {
-        WithFailed::fake();
-
-        WithFailed::make()->dispatch();
-
-        $this->assertEmpty(Context::get(Action::class, []));
-    }
-
-    #[Test]
-    public function it_runs_lifecycle_in_correct_order_dispatch(): void
-    {
-        WithSucceededAndMiddleware::make()->dispatch();
-
-        $this->assertSame([
-            WritesToContextBidirectional::IN,
-            WithSucceededAndMiddleware::HANDLE,
-            WritesToContextBidirectional::OUT,
-            WithSucceededAndMiddleware::SUCCEEDED,
-        ], Context::get(Action::class));
-    }
-
-    #[Test]
-    public function it_calls_failed_when_dispatched_action_throws(): void
-    {
-        try {
-            WithFailedAndSucceeded::make()->dispatch();
-        } catch (\RuntimeException) {
-            // expected
-        }
-
-        $this->assertContains(WithFailedAndSucceeded::FAILED, Context::get(Action::class, []));
-    }
-
-    #[Test]
-    public function it_does_not_call_prepare_when_dispatch_faked(): void
-    {
-        WithMiddleware::fake();
-
-        WithMiddleware::make(Order::factory()->make())->dispatch();
-
-        $this->assertEmpty(Context::get(Action::class, []));
     }
 }

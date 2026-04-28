@@ -9,6 +9,7 @@ use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Actions\Contracts\Action;
 use Tests\Tooling\Concerns\GetsFixtures;
 
 /**
@@ -35,7 +36,11 @@ class ActionCannotUseDispatchableTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('ActionWithDispatchable.php')], [
             [
-                '`Action` instances cannot use the `'.Dispatchable::class.'` trait.',
+                sprintf(
+                    '`%s` instances cannot use the `%s` trait.',
+                    class_basename(Action::class),
+                    class_basename(Dispatchable::class),
+                ),
                 14,
             ],
         ]);
@@ -46,7 +51,11 @@ class ActionCannotUseDispatchableTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('ActionWithDispatchableAndAttribute.php')], [
             [
-                '`Action` instances cannot use the `'.Dispatchable::class.'` trait.',
+                sprintf(
+                    '`%s` instances cannot use the `%s` trait.',
+                    class_basename(Action::class),
+                    class_basename(Dispatchable::class),
+                ),
                 15,
             ],
         ]);

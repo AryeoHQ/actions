@@ -31,9 +31,12 @@ final class ActionCannotDefineMiddlewareMethod extends \Tooling\PhpStan\Rules\Ru
     public function handle(Node $node, Scope $scope): void
     {
         $this->error(
-            '`Action` instances cannot define a `middleware()` method. Use the `$middleware` property or `prepare()` instead.',
+            sprintf(
+                '`%s` instances cannot define a `middleware()` method. Use the `$middleware` property or `prepare()` instead.',
+                class_basename(Action::class),
+            ),
             $this->findMiddlewareMethodLine($node) ?? $node->name?->getStartLine() ?? $node->getStartLine(),
-            'actions.middleware'
+            'Action.middleware.method.notAllowed'
         );
     }
 

@@ -57,9 +57,12 @@ final class ActionHandleCannotBeCalledDirectly extends \Tooling\PhpStan\Rules\Ru
     public function handle(Node $node, Scope $scope): void
     {
         $this->error(
-            'Method handle() cannot be called directly on Action instances. Use now() or dispatch() instead.',
+            sprintf(
+                'Method handle() cannot be called directly on `%s` instances. Use now() or dispatch() instead.',
+                class_basename(Action::class),
+            ),
             $node->getStartLine(),
-            'actions.handleDirectCall'
+            'Action.handle.directCall.notAllowed'
         );
     }
 }

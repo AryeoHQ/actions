@@ -7,6 +7,8 @@ namespace Tooling\Actions\PhpStan\Rules;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Actions\Concerns\AsAction;
+use Support\Actions\Contracts\Action;
 use Tests\Tooling\Concerns\GetsFixtures;
 
 /** @extends RuleTestCase<ActionMustUseAsAction> */
@@ -31,7 +33,11 @@ class ActionMustUseAsActionTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('MissingAsActionTraitAction.php')], [
             [
-                '`Action` instances must use `AsAction`.',
+                sprintf(
+                    '`%s` instances must use `%s`.',
+                    class_basename(Action::class),
+                    class_basename(AsAction::class),
+                ),
                 9,
             ],
         ]);
@@ -42,7 +48,11 @@ class ActionMustUseAsActionTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('MissingAsActionTraitActionWithAttribute.php')], [
             [
-                '`Action` instances must use `AsAction`.',
+                sprintf(
+                    '`%s` instances must use `%s`.',
+                    class_basename(Action::class),
+                    class_basename(AsAction::class),
+                ),
                 10,
             ],
         ]);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Support\Actions\Providers;
 
+use Illuminate\Contracts\Bus\Dispatcher as BusDispatcherContract;
+use Illuminate\Contracts\Bus\QueueingDispatcher as QueueingDispatcherContract;
 use Illuminate\Support\Facades\Artisan;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -27,6 +29,26 @@ class ProviderTest extends TestCase
         $this->assertInstanceOf(
             Dispatcher::class,
             $this->app->make(\Illuminate\Bus\Dispatcher::class)
+        );
+
+        $this->assertInstanceOf(
+            Dispatcher::class,
+            $this->app->make(BusDispatcherContract::class)
+        );
+
+        $this->assertInstanceOf(
+            Dispatcher::class,
+            $this->app->make(QueueingDispatcherContract::class)
+        );
+
+        $this->assertSame(
+            $this->app->make(\Illuminate\Bus\Dispatcher::class),
+            $this->app->make(BusDispatcherContract::class)
+        );
+
+        $this->assertSame(
+            $this->app->make(\Illuminate\Bus\Dispatcher::class),
+            $this->app->make(QueueingDispatcherContract::class)
         );
 
         $this->assertInstanceOf(

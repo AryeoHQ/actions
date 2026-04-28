@@ -35,6 +35,10 @@ services:
         class: Tooling\Actions\PhpStan\Rules\ActionCannotDefineMiddlewareMethod
         tags:
             - phpstan.rules.rule
+    -
+        class: Tooling\Actions\PhpStan\Rules\DispatchAfterQueuedFailedRequiresTries
+        tags:
+            - phpstan.rules.rule
 
 parameters:
     stubFiles:

@@ -8,6 +8,7 @@ use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Actions\Contracts\Action;
 use Tests\Tooling\Concerns\GetsFixtures;
 
 /** @extends RuleTestCase<ActionMustDefineHandleMethod> */
@@ -32,7 +33,10 @@ class ActionMustDefineHandleMethodTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('MissingHandleMethodAction.php')], [
             [
-                '`Action` instances must implement `handle()`.',
+                sprintf(
+                    '`%s` instances must implement `handle()`.',
+                    class_basename(Action::class),
+                ),
                 10,
             ],
         ]);
@@ -43,7 +47,10 @@ class ActionMustDefineHandleMethodTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('MissingHandleMethodActionWithAttribute.php')], [
             [
-                '`Action` instances must implement `handle()`.',
+                sprintf(
+                    '`%s` instances must implement `handle()`.',
+                    class_basename(Action::class),
+                ),
                 11,
             ],
         ]);

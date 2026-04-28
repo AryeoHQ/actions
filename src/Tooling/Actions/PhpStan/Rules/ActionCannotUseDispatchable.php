@@ -36,9 +36,13 @@ final class ActionCannotUseDispatchable extends \Tooling\PhpStan\Rules\Rule
     public function handle(Node $node, Scope $scope): void
     {
         $this->error(
-            '`Action` instances cannot use the `'.Dispatchable::class.'` trait.',
+            sprintf(
+                '`%s` instances cannot use the `%s` trait.',
+                class_basename(Action::class),
+                class_basename(Dispatchable::class),
+            ),
             $this->findDispatchableTraitLine($node) ?? $node->name?->getStartLine() ?? $node->getStartLine(),
-            'actions.dispatchable'
+            'Action.Dispatchable.notAllowed'
         );
     }
 

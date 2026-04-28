@@ -7,11 +7,24 @@ namespace Support\Actions\Concerns;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Jobs\SyncJob;
 
 trait Dispatchable
 {
     use InteractsWithQueue;
     use Queueable;
+
+    public function runningInQueue(): bool
+    {
+        return $this->job !== null && ! $this->job instanceof SyncJob;
+    }
+
+    public function clearJob(): static
+    {
+        $this->job = null;
+
+        return $this;
+    }
 
     public function dispatch(): PendingDispatch
     {

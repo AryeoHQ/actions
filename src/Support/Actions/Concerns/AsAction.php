@@ -8,6 +8,7 @@ trait AsAction
 {
     use Dispatchable;
     use Fakeable;
+    use HasLifecycle;
     use Nowable;
 
     public static function make(mixed ...$arguments): static

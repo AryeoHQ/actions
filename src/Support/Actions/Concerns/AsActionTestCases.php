@@ -16,6 +16,7 @@ use Tests\Fixtures\Support\Orders\Middleware\WritesToContextBidirectional;
 trait AsActionTestCases
 {
     use DispatchableTestCases;
+    use HasLifecycleTestCases;
     use NowableTestCases;
 
     #[Test]
