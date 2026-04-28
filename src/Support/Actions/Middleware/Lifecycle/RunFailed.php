@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Support\Actions\Middleware;
+namespace Support\Actions\Middleware\Lifecycle;
 
-class RunFailed
+use Support\Actions\Middleware\Lifecycle\Contracts\Lifecycle;
+
+class RunFailed implements Lifecycle
 {
     public function handle(object $command, callable $next): mixed
     {

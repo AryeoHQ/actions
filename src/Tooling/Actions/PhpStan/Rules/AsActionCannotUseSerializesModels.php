@@ -34,9 +34,13 @@ final class AsActionCannotUseSerializesModels extends \Tooling\PhpStan\Rules\Rul
     public function handle(Node $node, Scope $scope): void
     {
         $this->error(
-            '`AsAction` cannot use the `'.SerializesModels::class.'` trait. See README.md for details.',
+            sprintf(
+                '`%s` cannot use the `%s` trait. See README.md for details.',
+                class_basename(AsAction::class),
+                class_basename(SerializesModels::class),
+            ),
             $this->findSerializesModelsTraitLine($node) ?? $node->name?->getStartLine() ?? $node->getStartLine(),
-            'actions.serializesModels'
+            'Action.SerializesModels.notAllowed'
         );
     }
 

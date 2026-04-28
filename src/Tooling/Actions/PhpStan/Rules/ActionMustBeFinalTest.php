@@ -7,6 +7,7 @@ namespace Tooling\Actions\PhpStan\Rules;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Actions\Contracts\Action;
 use Tests\Tooling\Concerns\GetsFixtures;
 
 /**
@@ -33,7 +34,10 @@ class ActionMustBeFinalTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('NotFinalAction.php')], [
             [
-                '`Action` instances must be `final`.',
+                sprintf(
+                    '`%s` instances must be `final`.',
+                    class_basename(Action::class),
+                ),
                 10,
             ],
         ]);
@@ -44,7 +48,10 @@ class ActionMustBeFinalTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('NotFinalActionWithAttribute.php')], [
             [
-                '`Action` instances must be `final`.',
+                sprintf(
+                    '`%s` instances must be `final`.',
+                    class_basename(Action::class),
+                ),
                 11,
             ],
         ]);

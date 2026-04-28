@@ -30,9 +30,12 @@ final class ActionMustBeFinal extends \Tooling\PhpStan\Rules\Rule
     public function handle(Node $node, Scope $scope): void
     {
         $this->error(
-            '`Action` instances must be `final`.',
+            sprintf(
+                '`%s` instances must be `final`.',
+                class_basename(Action::class),
+            ),
             $node->name?->getStartLine() ?? $node->getStartLine(),
-            'actions.final'
+            'Action.final.required'
         );
     }
 }

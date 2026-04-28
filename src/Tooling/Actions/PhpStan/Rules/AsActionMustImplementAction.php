@@ -35,9 +35,13 @@ final class AsActionMustImplementAction extends \Tooling\PhpStan\Rules\Rule
         $traitLine = $this->getAsActionTraitLine($node);
 
         $this->error(
-            '`AsAction` trait requires `Action` contract.',
+            sprintf(
+                '`%s` trait requires `%s` contract.',
+                class_basename(AsAction::class),
+                class_basename(Action::class),
+            ),
             $traitLine,
-            'actions.interface'
+            'AsAction.Action.required'
         );
     }
 

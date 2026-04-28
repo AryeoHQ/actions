@@ -33,9 +33,13 @@ final class ActionCannotUseQueueable extends \Tooling\PhpStan\Rules\Rule
     public function handle(Node $node, Scope $scope): void
     {
         $this->error(
-            '`Action` instances cannot use the `'.Queueable::class.'` trait.',
+            sprintf(
+                '`%s` instances cannot use the `%s` trait.',
+                class_basename(Action::class),
+                class_basename(Queueable::class),
+            ),
             $this->findQueueableTraitLine($node) ?? $node->name?->getStartLine() ?? $node->getStartLine(),
-            'actions.queueable'
+            'Action.Queueable.notAllowed'
         );
     }
 

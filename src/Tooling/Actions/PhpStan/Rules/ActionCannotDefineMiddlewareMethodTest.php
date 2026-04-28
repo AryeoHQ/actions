@@ -8,6 +8,7 @@ use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Actions\Contracts\Action;
 use Tests\Tooling\Concerns\GetsFixtures;
 
 /**
@@ -34,7 +35,10 @@ class ActionCannotDefineMiddlewareMethodTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('ActionWithMiddlewareMethod.php')], [
             [
-                '`Action` instances cannot define a `middleware()` method. Use the `$middleware` property or `prepare()` instead.',
+                sprintf(
+                    '`%s` instances cannot define a `middleware()` method. Use the `$middleware` property or `prepare()` instead.',
+                    class_basename(Action::class),
+                ),
                 15,
             ],
         ]);

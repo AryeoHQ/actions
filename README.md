@@ -16,6 +16,10 @@ Actions integrate seamlessly with Laravel's queue system, allowing you to:
 - Test actions with mocked return values using `fake()`
 - Use all Laravel queue features (batching, chaining, middleware, etc.)
 
+## Architecture
+
+For implementation details and lifecycle flow, see `docs/architecture.md`.
+
 ## Usage
 
 ### Generate Actions
@@ -271,15 +275,82 @@ final class ProcessOrder implements Action
 }
 ```
 
+## Automatic Post-Execution Dispatching
+
+Actions can be automatically dispatched to the queue after execution. This allows an action that was executed synchronously via `now()` to also be placed onto the queue, or an action that was already queued to be dispatched again after completion.
+
+Four attributes are available, covering both sync and queued execution paths:
+
+| Attribute | Triggers When |
+|---|---|
+| `#[DispatchAfterSyncSucceeded]` | `now()` completes successfully |
+| `#[DispatchAfterSyncFailed]` | `now()` throws an exception |
+| `#[DispatchAfterQueuedSucceeded]` | Queued execution completes successfully |
+| `#[DispatchAfterQueuedFailed]` | Queued execution fails and `$tries` is exhausted |
+
+```php
+use Support\Actions\Attributes\DispatchAfterSyncSucceeded;
+use Support\Actions\Concerns\AsAction;
+use Support\Actions\Contracts\Action;
+
+#[DispatchAfterSyncSucceeded]
+final class ProcessOrder implements Action
+{
+    use AsAction;
+
+    public readonly Order $order;
+
+    public function __construct(Order $order)
+    {
+        $this->order = $order;
+    }
+
+    public function handle(): TrackingNumber
+    {
+        // Business logic
+    }
+}
+```
+
+When `ProcessOrder::make($order)->now()` is called, the action executes synchronously and returns the result. After `handle()` completes successfully, the action is dispatched to the queue.
+
+Attributes can be combined freely. For example, an action that should always end up on the queue regardless of outcome:
+
+```php
+#[DispatchAfterSyncSucceeded]
+#[DispatchAfterSyncFailed]
+final class ProcessOrder implements Action
+{
+    use AsAction;
+
+    // ...
+}
+```
+
+Or an action that re-dispatches itself after queued execution:
+
+```php
+#[DispatchAfterQueuedSucceeded]
+#[DispatchAfterQueuedFailed]
+final class ProcessOrder implements Action
+{
+    use AsAction;
+
+    public int $tries = 3;
+
+    // ...
+}
+```
+
+> **Note:** `#[DispatchAfterQueuedFailed]` requires a `$tries` property to be defined. The re-dispatch only occurs when all tries are exhausted, preventing infinite retry loops. This is enforced by a PHPStan rule.
+
 ## Queue Features
 
 Actions work exactly like Laravel Jobs and support all queue features including batching, chaining, middleware, rate limiting, unique jobs, encrypted jobs, and lifecycle methods. The `AsAction` trait includes:
 
-- `Dispatchable` - Custom implementation for action dispatching
+- `Dispatchable` - Custom implementation for action dispatching (composes `InteractsWithQueue` and `Queueable` internally)
 - `Fakeable` - Testing support with fake actions
-- `InteractsWithQueue` - Queue interaction methods
 - `Nowable` - Synchronous execution support
-- `Queueable` - Queue configuration
 
 > **Note:** `SerializesModels` is intentionally **not** included. Without it, Eloquent models passed to an action are serialized as-is — preserving the exact state at dispatch time rather than being re-fetched from the database when the job is processed. This ensures the worker operates on the data that was originally provided. If you prefer Laravel's default behavior of storing only the model identifier and rehydrating from the database at processing time, you can add `use \Illuminate\Queue\SerializesModels;` to your individual action classes.
 
@@ -322,15 +393,7 @@ The `prepare()` method is called automatically before each dispatch — in `now(
 
 ## Static Analysis
 
-PHPStan rules are automatically registered into tooling to ensure Actions follow the implementation standards:
-- Actions are `final` classes (ActionMustBeFinal)
-- Actions use the `AsAction` trait (ActionMustUseAsAction)
-- Actions have a `handle()` method (ActionMustDefineHandleMethod)
-- Classes using `AsAction` must implement the `Action` interface (AsActionMustImplementAction)
-- Actions cannot use the `Dispatchable` trait (ActionCannotUseDispatchable)
-- Actions cannot use the `Queueable` trait (ActionCannotUseQueueable)
-- The `handle()` method cannot be called directly (ActionHandleCannotBeCalledDirectly)
-- Actions cannot define a `middleware()` method (ActionCannotDefineMiddlewareMethod)
+PHPStan rules are automatically registered into tooling to ensure Actions follow the implementation standards.
 
 ## Rector
 

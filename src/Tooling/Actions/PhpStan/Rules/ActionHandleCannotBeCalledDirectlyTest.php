@@ -8,6 +8,7 @@ use PHPStan\Rules\Rule;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Actions\Contracts\Action;
 use Tests\Tooling\Concerns\GetsFixtures;
 
 /**
@@ -34,7 +35,10 @@ class ActionHandleCannotBeCalledDirectlyTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('CallingHandleDirectlyOnAction.php')], [
             [
-                'Method handle() cannot be called directly on Action instances. Use now() or dispatch() instead.',
+                sprintf(
+                    'Method handle() cannot be called directly on `%s` instances. Use now() or dispatch() instead.',
+                    class_basename(Action::class),
+                ),
                 12,
             ],
         ]);

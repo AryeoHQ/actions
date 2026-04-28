@@ -5,10 +5,20 @@ declare(strict_types=1);
 namespace Support\Actions\Contracts;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\PendingDispatch;
+use Support\Actions\Bus\Invocation;
 
 interface Action extends ShouldQueue
 {
     public static function make(mixed ...$arguments): static;
+
+    public function dispatch(): PendingDispatch;
+
+    public function now(): mixed;
+
+    public function runningInQueue(): bool;
+
+    public function prepareFor(Invocation $via): static;
 
     /**
      * This implementation is provided to `AsAction` by `\Illuminate\Foundation\Queue\Queueable`.
@@ -18,4 +28,9 @@ interface Action extends ShouldQueue
      * @return $this
      */
     public function through($middleware);
+
+    /**
+     * @return $this
+     */
+    public function clearJob(): static;
 }

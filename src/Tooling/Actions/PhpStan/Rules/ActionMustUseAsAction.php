@@ -31,9 +31,13 @@ final class ActionMustUseAsAction extends \Tooling\PhpStan\Rules\Rule
     public function handle(Node $node, Scope $scope): void
     {
         $this->error(
-            '`Action` instances must use `AsAction`.',
+            sprintf(
+                '`%s` instances must use `%s`.',
+                class_basename(Action::class),
+                class_basename(AsAction::class),
+            ),
             $node->name?->getStartLine() ?? $node->getStartLine(),
-            'actions.trait'
+            'Action.AsAction.required'
         );
     }
 }

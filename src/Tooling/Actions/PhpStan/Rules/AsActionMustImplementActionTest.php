@@ -7,6 +7,8 @@ namespace Tooling\Actions\PhpStan\Rules;
 use PHPStan\Testing\RuleTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Actions\Concerns\AsAction;
+use Support\Actions\Contracts\Action;
 use Tests\Tooling\Concerns\GetsFixtures;
 
 /** @extends RuleTestCase<AsActionMustImplementAction> */
@@ -31,7 +33,11 @@ class AsActionMustImplementActionTest extends RuleTestCase
     {
         $this->analyse([$this->getFixturePath('MissingActionContractAction.php')], [
             [
-                '`AsAction` trait requires `Action` contract.',
+                sprintf(
+                    '`%s` trait requires `%s` contract.',
+                    class_basename(AsAction::class),
+                    class_basename(Action::class),
+                ),
                 11,
             ],
         ]);
