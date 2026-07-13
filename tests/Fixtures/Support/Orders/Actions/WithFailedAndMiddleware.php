@@ -9,6 +9,7 @@ use RuntimeException;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 use Tests\Fixtures\Support\Orders\Middleware\WritesToContextBidirectional;
+use Throwable;
 
 final class WithFailedAndMiddleware implements Action
 {
@@ -30,7 +31,7 @@ final class WithFailedAndMiddleware implements Action
         throw new RuntimeException('Action failed intentionally');
     }
 
-    public function failed(\Throwable $e): void
+    public function failed(Throwable $exception): void
     {
         Context::push(Action::class, self::FAILED);
     }

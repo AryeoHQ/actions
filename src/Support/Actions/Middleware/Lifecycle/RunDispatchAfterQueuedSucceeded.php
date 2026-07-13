@@ -18,7 +18,9 @@ class RunDispatchAfterQueuedSucceeded implements Lifecycle
             $next($command),
             fn () => when(
                 (new ReflectionClass($command))->getAttributes(DispatchAfterQueuedSucceeded::class) !== []
-                    && $command->runningInQueue(),
+                    && $command->runningInQueue()
+                    && $command->job?->hasFailed() !== true
+                    && $command->job?->isReleased() !== true,
                 fn () => rescue(fn () => $dispatchable->dispatch(), report: true) // @phpstan-ignore argument.templateType
             )
         );

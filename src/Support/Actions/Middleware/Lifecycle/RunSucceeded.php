@@ -13,7 +13,9 @@ class RunSucceeded implements Lifecycle
         return tap(
             $next($command),
             fn () => when(
-                method_exists($command, 'succeeded'),
+                method_exists($command, 'succeeded')
+                    && $command->job?->hasFailed() !== true
+                    && $command->job?->isReleased() !== true,
                 fn () => rescue(fn () => call_user_func([$command, 'succeeded']), report: true)
             )
         );

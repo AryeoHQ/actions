@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Support\Actions\Concerns;
 
+use Illuminate\Queue\ManuallyFailedException;
 use Illuminate\Support\Facades\Context;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
@@ -17,6 +18,7 @@ use Tests\Fixtures\Support\Orders\Actions\WithFailed;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedAndMiddleware;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedAndSucceeded;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedThatThrows;
+use Tests\Fixtures\Support\Orders\Actions\WithManualFailAndDispatchAfterSyncFailed;
 use Tests\Fixtures\Support\Orders\Actions\WithMiddleware;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceededAndMiddleware;
@@ -174,7 +176,21 @@ trait HasLifecycleTestCases
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(2, array_filter($context, fn ($v) => $v === WithDispatchAfterSyncFailed::HANDLE));
+        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithDispatchAfterSyncFailed::HANDLE));
+    }
+
+    #[Test]
+    public function it_redispatches_on_sync_failure_when_fail_is_called_when_now(): void
+    {
+        try {
+            WithManualFailAndDispatchAfterSyncFailed::make()->now();
+        } catch (ManuallyFailedException) {
+            // expected
+        }
+
+        $context = Context::get(Action::class, []);
+
+        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithManualFailAndDispatchAfterSyncFailed::HANDLE));
     }
 
     #[Test]
@@ -204,7 +220,7 @@ trait HasLifecycleTestCases
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(2, array_filter($context, fn ($v) => $v === WithDispatchAfterSyncSucceeded::HANDLE));
+        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithDispatchAfterSyncSucceeded::HANDLE));
     }
 
     #[Test]
@@ -226,7 +242,7 @@ trait HasLifecycleTestCases
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(1, array_filter($context, fn ($v) => $v === WithDispatchAfterQueuedFailed::HANDLE));
+        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedFailed::HANDLE));
     }
 
     #[Test]
@@ -236,7 +252,7 @@ trait HasLifecycleTestCases
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(1, array_filter($context, fn ($v) => $v === WithDispatchAfterQueuedSucceeded::HANDLE));
+        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedSucceeded::HANDLE));
     }
 
     #[Test]
@@ -381,7 +397,7 @@ trait HasLifecycleTestCases
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(1, array_filter($context, fn ($v) => $v === WithDispatchAfterQueuedFailed::HANDLE));
+        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedFailed::HANDLE));
     }
 
     #[Test]
@@ -391,7 +407,7 @@ trait HasLifecycleTestCases
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(1, array_filter($context, fn ($v) => $v === WithDispatchAfterQueuedSucceeded::HANDLE));
+        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedSucceeded::HANDLE));
     }
 
     #[Test]
@@ -428,7 +444,7 @@ trait HasLifecycleTestCases
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(2, array_filter($context, fn ($v) => $v === WithDispatchAfterSyncFailed::HANDLE));
+        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithDispatchAfterSyncFailed::HANDLE));
         $this->assertContains(WithDispatchAfterSyncFailed::FAILED, $context);
     }
 
@@ -439,7 +455,7 @@ trait HasLifecycleTestCases
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(2, array_filter($context, fn ($v) => $v === WithDispatchAfterSyncSucceeded::HANDLE));
+        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithDispatchAfterSyncSucceeded::HANDLE));
         $this->assertContains(WithDispatchAfterSyncSucceeded::SUCCEEDED, $context);
     }
 
@@ -454,7 +470,7 @@ trait HasLifecycleTestCases
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(1, array_filter($context, fn ($v) => $v === WithDispatchAfterQueuedFailed::HANDLE));
+        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedFailed::HANDLE));
     }
 
     #[Test]
@@ -464,6 +480,6 @@ trait HasLifecycleTestCases
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(1, array_filter($context, fn ($v) => $v === WithDispatchAfterQueuedSucceeded::HANDLE));
+        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedSucceeded::HANDLE));
     }
 }
