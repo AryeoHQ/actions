@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Context;
 use RuntimeException;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
+use Throwable;
 
 final class WithFailedAndSucceeded implements Action
 {
@@ -27,7 +28,7 @@ final class WithFailedAndSucceeded implements Action
         Context::push(Action::class, self::SUCCEEDED);
     }
 
-    public function failed(\Throwable $e): void
+    public function failed(Throwable $exception): void
     {
         Context::push(Action::class, self::FAILED);
     }

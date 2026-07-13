@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Support\Actions\Middleware\Lifecycle;
 
 use Support\Actions\Middleware\Lifecycle\Contracts\Lifecycle;
+use Throwable;
 
 class RunFailed implements Lifecycle
 {
@@ -12,7 +13,7 @@ class RunFailed implements Lifecycle
     {
         try {
             return $next($command);
-        } catch (\Throwable $throwable) {
+        } catch (Throwable $throwable) {
             when(
                 method_exists($command, 'failed'),
                 fn () => rescue(fn () => call_user_func([$command, 'failed'], $throwable), report: true)

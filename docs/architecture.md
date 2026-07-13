@@ -42,6 +42,11 @@ Also provides `make()`.
 - `dispatch()` returns `PendingDispatch`.
 - `runningInQueue()` checks for non-null job and excludes `SyncJob`.
 - `dispatchIf()` and `dispatchUnless()` provide conditional dispatch.
+- `fail()` overrides `InteractsWithQueue::fail()`:
+  - normalizes the argument (`string` → `ManuallyFailedException`, `null` → `ManuallyFailedException`) so `failed()` always receives a `Throwable`
+  - on a queue worker (`runningInQueue()`): delegates to `Job::fail()` — standard Laravel bookkeeping, execution continues
+  - synchronously (`now()`, `dispatchSync()`, sync queue driver): marks the job as failed and throws the exception to the waiting caller
+  - `failed()` runs exactly once on every path (via `RunFailed` on `now()`, via Laravel elsewhere)
 
 ### HasLifecycle
 
@@ -110,8 +115,8 @@ All lifecycle middleware implement `Support\Actions\Middleware\Lifecycle\Contrac
 
 ### Core hooks
 
-- `RunSucceeded`: executes `succeeded()` after successful handling when method exists.
-- `RunFailed`: executes `failed(Throwable $e)` on exception when method exists, then rethrows original exception.
+- `RunSucceeded`: executes `succeeded()` after successful handling when method exists and the job has not been marked failed or released (`fail()` + continue and `release()` are not successes — the same predicate Laravel uses in `CallQueuedHandler` for chain progression).
+- `RunFailed`: executes `failed(Throwable $exception)` on exception when method exists, then rethrows original exception.
 
 ### DispatchAfter attribute hooks
 
@@ -124,7 +129,9 @@ All attribute-based hooks use reflection to check class attributes and condition
 - `RunDispatchAfterQueuedFailed`:
   - Trigger: exception + `DispatchAfterQueuedFailed` attribute + running in queue + final attempt reached.
 - `RunDispatchAfterQueuedSucceeded`:
-  - Trigger: success + `DispatchAfterQueuedSucceeded` attribute + running in queue.
+  - Trigger: success + `DispatchAfterQueuedSucceeded` attribute + running in queue + job not marked failed or released.
+
+The failure hooks carry no failed-state guard: the `DispatchAfter*Failed` attributes declare side effects that are guaranteed on failure, including manual `fail()`. The success hooks do guard on failed state — a run that failed must not fire success side effects.
 
 Hook-internal exceptions are wrapped with `rescue(..., report: true)` so lifecycle hook failures do not replace the original flow outcome.
 

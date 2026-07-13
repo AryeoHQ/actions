@@ -14,7 +14,7 @@ class Factory extends \Illuminate\Database\Eloquent\Factories\Factory
     public function definition()
     {
         return [
-            'name' => fake()->word(),
+            'name' => fake()->unique()->word(),
         ];
     }
 }

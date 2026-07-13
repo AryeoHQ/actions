@@ -275,6 +275,36 @@ final class ProcessOrder implements Action
 }
 ```
 
+## Manually Failing an Action
+
+Like a traditional Laravel Job, an action can mark itself as failed by calling `$this->fail()`:
+
+```php
+public function handle(): void
+{
+    if (! $this->order->isPayable()) {
+        $this->fail('Order is not payable.');
+
+        return;
+    }
+
+    // ...
+}
+```
+
+`fail()` accepts a `Throwable`, a string (converted to a `ManuallyFailedException`), or nothing (a `ManuallyFailedException` is created for you). On every execution path the `failed()` hook is invoked exactly once with the exception, and `succeeded()` will not run. The same applies to `$this->release()` on a queued run — a released attempt is not a success, so `succeeded()` waits for the attempt that actually completes.
+
+How the failure surfaces depends on where the action is running:
+
+- **On a queue worker** — standard Laravel behavior: the job is marked as failed, queue bookkeeping runs (`failed_jobs`, `JobFailed`), and no exception is thrown — there is no waiting caller to interrupt.
+- **Synchronously** (`now()`, `dispatchSync()`, or `dispatch()` with the `sync` queue driver) — a caller is waiting on the result, so the failure is thrown to it as the exception passed to `fail()`. Handle it with `try`/`catch` or `rescue()`:
+
+```php
+$result = rescue(fn () => ProcessOrder::make($order)->now(), $fallbackValue);
+```
+
+> **Important:** Because `fail()` throws outside the queue but returns inside it, any code written after a `fail()` call only ever executes on a queued run. Follow `fail()` with a `return` (or make it the last statement) so the action behaves identically on every path.
+
 ## Automatic Post-Execution Dispatching
 
 Actions can be automatically dispatched to the queue after execution. This allows an action that was executed synchronously via `now()` to also be placed onto the queue, or an action that was already queued to be dispatched again after completion.

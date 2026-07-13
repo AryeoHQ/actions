@@ -4,29 +4,31 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Support\Orders\Actions;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Queue\Middleware\FailOnException;
 use Illuminate\Support\Facades\Context;
-use RuntimeException;
-use Support\Actions\Attributes\DispatchAfterQueuedFailed;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 use Throwable;
 
-#[DispatchAfterQueuedFailed]
-final class WithDispatchAfterQueuedFailed implements Action
+final class WithFailOnException implements Action
 {
     use AsAction;
-
-    public int $tries = 3;
 
     public const HANDLE = self::class.'::handle';
 
     public const FAILED = self::class.'::failed';
 
+    public function prepare(): void
+    {
+        $this->through([new FailOnException([AuthorizationException::class])]);
+    }
+
     public function handle(): never
     {
         Context::push(Action::class, self::HANDLE);
 
-        throw new RuntimeException('Action failed intentionally');
+        throw new AuthorizationException;
     }
 
     public function failed(Throwable $exception): void
