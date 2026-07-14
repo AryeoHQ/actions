@@ -12,12 +12,21 @@ class RunSucceeded implements Lifecycle
     {
         return tap(
             $next($command),
-            fn () => when(
-                method_exists($command, 'succeeded')
-                    && $command->job?->hasFailed() !== true
-                    && $command->job?->isReleased() !== true,
-                fn () => rescue(fn () => call_user_func([$command, 'succeeded']), report: true)
-            )
+            fn () => $this->run($command)
         );
+    }
+
+    private function run(object $command): void
+    {
+        when(
+            $this->shouldRun($command),
+            fn () => rescue(fn () => call_user_func([$command, 'succeeded']), report: true)
+        );
+    }
+
+    private function shouldRun(object $command): bool
+    {
+        return method_exists($command, 'succeeded')
+            && ! $command->failedOrReleased;
     }
 }

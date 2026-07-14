@@ -378,7 +378,8 @@ final class ProcessOrder implements Action
 
 Actions work exactly like Laravel Jobs and support all queue features including batching, chaining, middleware, rate limiting, unique jobs, encrypted jobs, and lifecycle methods. The `AsAction` trait includes:
 
-- `Dispatchable` - Custom implementation for action dispatching (composes `InteractsWithQueue` and `Queueable` internally)
+- `Dispatchable` - Custom implementation for action dispatching (composes `Queueable` internally)
+- `InteractsWithJob` - Job-state behavior shared by the sync and queue paths (composes `InteractsWithQueue` internally); provides `$runningInQueue`, `fail()`, `clearJob()`, `$attempts`, `$failed`, `$released`, `$failedOrReleased`, `$attemptsLimited`, `$attemptsExhausted`
 - `Fakeable` - Testing support with fake actions
 - `Nowable` - Synchronous execution support
 

@@ -301,6 +301,6 @@ trait NowableTestCases
 
         $action->now();
 
-        $this->assertFalse($action->runningInQueue());
+        $this->assertFalse($action->runningInQueue);
     }
 }

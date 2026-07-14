@@ -16,9 +16,31 @@ interface Action extends ShouldQueue
 
     public function now(): mixed;
 
-    public function runningInQueue(): bool;
-
     public function prepareFor(Invocation $via): static;
+
+    /**
+     * @param  class-string  $attribute
+     */
+    public function declares(string $attribute): bool;
+
+    public bool $runningInQueue { get; }
+
+    public int $attempts { get; }
+
+    public bool $failed { get; }
+
+    public bool $released { get; }
+
+    public bool $failedOrReleased { get; }
+
+    public bool $attemptsLimited { get; }
+
+    public bool $attemptsExhausted { get; }
+
+    /**
+     * @return $this
+     */
+    public function clearJob(): static;
 
     /**
      * This implementation is provided to `AsAction` by `\Illuminate\Foundation\Queue\Queueable`.
@@ -28,9 +50,4 @@ interface Action extends ShouldQueue
      * @return $this
      */
     public function through($middleware);
-
-    /**
-     * @return $this
-     */
-    public function clearJob(): static;
 }

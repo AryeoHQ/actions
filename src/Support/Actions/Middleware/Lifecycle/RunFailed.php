@@ -14,12 +14,22 @@ class RunFailed implements Lifecycle
         try {
             return $next($command);
         } catch (Throwable $throwable) {
-            when(
-                method_exists($command, 'failed'),
-                fn () => rescue(fn () => call_user_func([$command, 'failed'], $throwable), report: true)
-            );
+            $this->run($command, $throwable);
 
             throw $throwable;
         }
+    }
+
+    private function run(object $command, Throwable $throwable): void
+    {
+        when(
+            $this->shouldRun($command),
+            fn () => rescue(fn () => call_user_func([$command, 'failed'], $throwable), report: true)
+        );
+    }
+
+    private function shouldRun(object $command): bool
+    {
+        return method_exists($command, 'failed');
     }
 }
