@@ -14,10 +14,17 @@ All actions implement `Support\Actions\Contracts\Action` and typically use `Supp
 - `make(...$arguments): static`
 - `dispatch(): PendingDispatch`
 - `now(): mixed`
-- `runningInQueue(): bool`
 - `prepareFor(Invocation $via): static`
-- `through($middleware)`
+- `declares(string $attribute): bool`
+- `bool $runningInQueue { get; }`
+- `int $attempts { get; }`
+- `bool $failed { get; }`
+- `bool $released { get; }`
+- `bool $failedOrReleased { get; }`
+- `bool $attemptsLimited { get; }`
+- `bool $attemptsExhausted { get; }`
 - `clearJob(): static`
+- `through($middleware)`
 
 ## Core Traits
 
@@ -27,9 +34,10 @@ Composes:
 - `Dispatchable`
 - `Fakeable`
 - `HasLifecycle`
+- `InteractsWithJob`
 - `Nowable`
 
-Also provides `make()`.
+Also provides `make()` and `declares($attribute)`, which reports whether the action class declares the given attribute (used by the re-dispatch middleware instead of reaching into the action with reflection).
 
 ### Nowable
 
@@ -38,13 +46,26 @@ Also provides `make()`.
 
 ### Dispatchable
 
-- Uses Laravel `Queueable` + `InteractsWithQueue`.
+- Uses Laravel `Queueable`.
 - `dispatch()` returns `PendingDispatch`.
-- `runningInQueue()` checks for non-null job and excludes `SyncJob`.
 - `dispatchIf()` and `dispatchUnless()` provide conditional dispatch.
+
+### InteractsWithJob
+
+Encapsulates all path-agnostic job-state behavior (used by both the sync and queue paths). The underlying `$this->job` property comes from Laravel's `InteractsWithQueue`, composed below.
+
+- Uses Laravel `InteractsWithQueue` (source of `$this->job`).
+- `$runningInQueue` (get-only hook) checks for non-null job and excludes `SyncJob`.
+- `$attempts` (get-only hook) is the number of times the action has been attempted.
+- `$failed` (get-only hook) reports whether the job has been marked as failed.
+- `$released` (get-only hook) reports whether the job has been released back onto the queue.
+- `$failedOrReleased` (get-only hook) reports whether the job has failed or been released; used to gate success hooks.
+- `$attemptsLimited` (get-only hook) reports whether the job has a maximum number of allowed attempts. A `null` or `0` `maxTries()` means the job is retried indefinitely, so this is `false`.
+- `$attemptsExhausted` (get-only hook) reports whether the allowed attempts have been used up — `$attemptsLimited` and `attempts()` has reached `maxTries()`; used to detect terminal failure by exhaustion. A job retried indefinitely is never exhausted.
+- `clearJob()` nulls the job so the command can be re-dispatched cleanly.
 - `fail()` overrides `InteractsWithQueue::fail()`:
   - normalizes the argument (`string` → `ManuallyFailedException`, `null` → `ManuallyFailedException`) so `failed()` always receives a `Throwable`
-  - on a queue worker (`runningInQueue()`): delegates to `Job::fail()` — standard Laravel bookkeeping, execution continues
+  - on a queue worker (`$runningInQueue`): delegates to `Job::fail()` — standard Laravel bookkeeping, execution continues
   - synchronously (`now()`, `dispatchSync()`, sync queue driver): marks the job as failed and throws the exception to the waiting caller
   - `failed()` runs exactly once on every path (via `RunFailed` on `now()`, via Laravel elsewhere)
 

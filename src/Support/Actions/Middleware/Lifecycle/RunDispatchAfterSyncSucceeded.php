@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Support\Actions\Middleware\Lifecycle;
 
-use ReflectionClass;
 use Support\Actions\Attributes\DispatchAfterSyncSucceeded;
 use Support\Actions\Middleware\Lifecycle\Contracts\Lifecycle;
 
@@ -16,11 +15,20 @@ class RunDispatchAfterSyncSucceeded implements Lifecycle
 
         return tap(
             $next($command),
-            fn () => when(
-                (new ReflectionClass($command))->getAttributes(DispatchAfterSyncSucceeded::class) !== []
-                    && ! $command->runningInQueue(),
-                fn () => rescue(fn () => $dispatchable->dispatch(), report: true) // @phpstan-ignore argument.templateType
-            )
+            fn () => $this->dispatch($command, $dispatchable)
         );
+    }
+
+    private function dispatch(object $command, object $dispatchable): void
+    {
+        when(
+            $this->shouldDispatch($command),
+            fn () => rescue(fn () => $dispatchable->dispatch(), report: true) // @phpstan-ignore argument.templateType
+        );
+    }
+
+    private function shouldDispatch(object $command): bool
+    {
+        return $command->declares(DispatchAfterSyncSucceeded::class) && ! $command->runningInQueue;
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Support\Actions\Middleware\Lifecycle;
 
-use ReflectionClass;
 use Support\Actions\Attributes\DispatchAfterSyncFailed;
 use Support\Actions\Middleware\Lifecycle\Contracts\Lifecycle;
 use Throwable;
@@ -18,13 +17,22 @@ class RunDispatchAfterSyncFailed implements Lifecycle
         try {
             return $next($command);
         } catch (Throwable $throwable) {
-            when(
-                (new ReflectionClass($command))->getAttributes(DispatchAfterSyncFailed::class) !== []
-                    && ! $command->runningInQueue(),
-                fn () => rescue(fn () => $dispatchable->dispatch(), report: true) // @phpstan-ignore argument.templateType
-            );
+            $this->dispatch($command, $dispatchable);
 
             throw $throwable;
         }
+    }
+
+    private function dispatch(object $command, object $dispatchable): void
+    {
+        when(
+            $this->shouldDispatch($command),
+            fn () => rescue(fn () => $dispatchable->dispatch(), report: true) // @phpstan-ignore argument.templateType
+        );
+    }
+
+    private function shouldDispatch(object $command): bool
+    {
+        return $command->declares(DispatchAfterSyncFailed::class) && ! $command->runningInQueue;
     }
 }
