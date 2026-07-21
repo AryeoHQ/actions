@@ -383,7 +383,7 @@ Actions work exactly like Laravel Jobs and support all queue features including 
 - `Fakeable` - Testing support with fake actions
 - `Nowable` - Synchronous execution support
 
-> **Note:** `SerializesModels` is intentionally **not** included. Without it, Eloquent models passed to an action are serialized as-is — preserving the exact state at dispatch time rather than being re-fetched from the database when the job is processed. This ensures the worker operates on the data that was originally provided. If you prefer Laravel's default behavior of storing only the model identifier and rehydrating from the database at processing time, you can add `use \Illuminate\Queue\SerializesModels;` to your individual action classes.
+> **Note:** `SerializesModels` is left off `AsAction` so each action can opt in for itself. Without it (the default), a dispatched model is serialized as-is, so the worker sees the model exactly as it was at dispatch. Add `use \Illuminate\Queue\SerializesModels;` to an action when you want Laravel's default instead — storing only the model identifier and rehydrating fresh from the database when the job runs.
 
 For detailed documentation on queue features, see the [Laravel Queue Documentation](https://laravel.com/docs/queues).
 
@@ -421,6 +421,25 @@ final class ProcessOrder implements Action
 The `prepare()` method is called automatically before each dispatch — in `now()`, `dispatch()`, and `dispatchSync()` paths. It provides a clean place to configure middleware that depends on constructor arguments, without cluttering the constructor. For queued dispatches, `prepare()` runs before the job is sent to the queue, and the resulting `$middleware` property serializes with the job.
 
 > **Important:** Actions cannot define a `middleware()` method. This restriction ensures that lifecycle hooks (`succeeded()`, `failed()`) always wrap the full middleware + handle lifecycle consistently across all dispatch paths. Use the `$middleware` property, `prepare()`, or `through()` instead.
+
+### Middleware Blocking on `now()`
+
+Middleware like `WithoutOverlapping` and `RateLimited` can prevent an action from running — for example, when a lock is already held or a rate limit is exceeded. On the queue this is handled by releasing the job for a later retry. On `now()` there is no queue to retry on, so the package throws an `Interrupted` exception instead of silently returning null:
+
+```php
+use Support\Actions\Bus\Pipelines\Exceptions\Interrupted;
+
+try {
+    ProcessOrder::make($order)->now();
+} catch (Interrupted $e) {
+    $e->action;     // The action class-string, e.g. ProcessOrder::class
+    $e->middleware;  // The middleware class-string that interrupted, e.g. WithoutOverlapping::class
+}
+```
+
+The exception carries the class-string of the middleware that stopped the chain, so callers can branch on it. The package does not maintain a list of known middleware — any middleware that declines to pass control on (by not calling `$next`) is detected and attributed.
+
+An interruption is not a success and not a failure — it means the action never ran. So neither `succeeded()` nor `failed()` is called, and neither `#[DispatchAfterSyncSucceeded]` nor `#[DispatchAfterSyncFailed]` fires. The `Interrupted` exception propagates to the caller, who decides what to do next (for example, catch it and `dispatch()` the action to the queue, where the middleware can release and retry).
 
 ## Static Analysis
 
