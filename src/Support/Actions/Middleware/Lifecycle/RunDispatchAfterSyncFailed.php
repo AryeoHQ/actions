@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Support\Actions\Middleware\Lifecycle;
 
 use Support\Actions\Attributes\DispatchAfterSyncFailed;
+use Support\Actions\Bus\Pipelines\Exceptions\Interrupted;
 use Support\Actions\Middleware\Lifecycle\Contracts\Lifecycle;
 use Throwable;
 
@@ -16,6 +17,8 @@ class RunDispatchAfterSyncFailed implements Lifecycle
 
         try {
             return $next($command);
+        } catch (Interrupted $interrupted) {
+            throw $interrupted;
         } catch (Throwable $throwable) {
             $this->dispatch($command, $dispatchable);
 

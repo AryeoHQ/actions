@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Support\Actions\Bus;
 
-use Illuminate\Pipeline\Pipeline;
+use Support\Actions\Bus\Pipelines\DetectsInterruption;
 use Support\Actions\Contracts\Action;
 
 class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
@@ -33,7 +33,7 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
          */
         return match (! $command instanceof Action || $command->job) {
             true => $this->decorated->dispatchNow($command, $handler),
-            false => (new Pipeline(app()))->send(
+            false => (new DetectsInterruption(app()))->send(
                 $command->prepareFor(Invocation::Now)
             )->through(
                 $command->middleware

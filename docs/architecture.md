@@ -95,9 +95,10 @@ Lifecycle preparation is owned in this trait.
 - Re-entry guard: if `$command->job` is already set, dispatch passes through directly.
 - Otherwise:
   - `prepareFor(Invocation::Now)` is called.
-  - Pipeline executes through command middleware.
+  - A `DetectsInterruption` pipeline (subclass of `Illuminate\Pipeline\Pipeline`) executes through command middleware. It composes around `Pipeline::carry()` to wrap each pipe, without reimplementing any pipe-invocation mechanics.
   - `finally()` clears the job.
-  - command is dispatched through the decorated dispatcher.
+  - The destination dispatches the command through the decorated dispatcher.
+  - If a middleware stops the chain (never calls `$next`), `Interrupted` is thrown from inside the pipeline at that middleware's boundary, carrying the action and interrupting middleware class-strings. Because it is thrown from within the pipeline (not after it resolves), the exception propagates up through the lifecycle middleware: the success hooks (`RunSucceeded`, `RunDispatchAfterSyncSucceeded`) are skipped because their `tap()` never fires, and `RunFailed` / `RunDispatchAfterSyncFailed` re-throw `Interrupted` without invoking `failed()` or re-dispatching. An interruption is therefore neither a success nor a failure — the action never ran — and it bypasses both lifecycles entirely.
 
 ### `dispatch()` path
 
