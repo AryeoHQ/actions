@@ -316,7 +316,9 @@ Four attributes are available, covering both sync and queued execution paths:
 | `#[DispatchAfterSyncSucceeded]` | `now()` completes successfully |
 | `#[DispatchAfterSyncFailed]` | `now()` throws an exception |
 | `#[DispatchAfterQueuedSucceeded]` | Queued execution completes successfully |
-| `#[DispatchAfterQueuedFailed]` | Queued execution fails and `$tries` is exhausted |
+| `#[DispatchAfterQueuedFailed]` | Queued execution fails terminally (exhausted `$tries`, `maxExceptions`, `retryUntil`, timeout, or worker `--tries`) |
+
+In every case the re-dispatch happens **after** the corresponding `succeeded()` / `failed()` lifecycle hook has run, so cleanup or compensation in a hook is guaranteed to complete before the follow-up copy is enqueued.
 
 ```php
 use Support\Actions\Attributes\DispatchAfterSyncSucceeded;
@@ -372,7 +374,7 @@ final class ProcessOrder implements Action
 }
 ```
 
-> **Note:** `#[DispatchAfterQueuedFailed]` requires a `$tries` property to be defined. The re-dispatch only occurs when all tries are exhausted, preventing infinite retry loops. This is enforced by a PHPStan rule.
+> **Note:** `#[DispatchAfterQueuedFailed]` requires a `$tries` property to be defined, enforced by a PHPStan rule. `$tries` bounds retries so the action reaches terminal failure (and thus re-dispatches) instead of retrying forever.
 
 ## Queue Features
 
@@ -380,6 +382,7 @@ Actions work exactly like Laravel Jobs and support all queue features including 
 
 - `Dispatchable` - Custom implementation for action dispatching (composes `Queueable` internally)
 - `InteractsWithJob` - Job-state behavior shared by the sync and queue paths (composes `InteractsWithQueue` internally); provides `$runningInQueue`, `fail()`, `clearJob()`, `$attempts`, `$failed`, `$released`, `$failedOrReleased`, `$attemptsLimited`, `$attemptsExhausted`
+- `InteractsWithChain` - provides `clearChain()`; used with `clearJob()` by `standalone()` to detach a copy from its run before re-dispatch
 - `Fakeable` - Testing support with fake actions
 - `Nowable` - Synchronous execution support
 
@@ -427,7 +430,7 @@ The `prepare()` method is called automatically before each dispatch — in `now(
 Middleware like `WithoutOverlapping` and `RateLimited` can prevent an action from running — for example, when a lock is already held or a rate limit is exceeded. On the queue this is handled by releasing the job for a later retry. On `now()` there is no queue to retry on, so the package throws an `Interrupted` exception instead of silently returning null:
 
 ```php
-use Support\Actions\Bus\Pipelines\Exceptions\Interrupted;
+use Support\Actions\Pipeline\Exceptions\Interrupted;
 
 try {
     ProcessOrder::make($order)->now();

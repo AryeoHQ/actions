@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Support\Actions\Bus;
 
-use Support\Actions\Bus\Pipelines\DetectsInterruption;
+use Support\Actions\Attributes\DispatchAfterSyncFailed;
+use Support\Actions\Attributes\DispatchAfterSyncSucceeded;
 use Support\Actions\Contracts\Action;
+use Support\Actions\Pipeline\DetectsInterruption;
+use Support\Actions\Pipeline\Exceptions\Interrupted;
+use Throwable;
 
 class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
 {
@@ -19,30 +23,53 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
     }
 
     /**
+     * When processing a queued job, the handler calls dispatchNow() with $command->job
+     * already set. In that case we want to just pass it through since the handler
+     * has its own lifecycle machinery.
+     *
      * @param  mixed  $command
      * @param  mixed  $handler
      * @return mixed
      */
     public function dispatchNow($command, $handler = null)
     {
-        /**
-         * Laravel's `dispatchNow()` sets `$command->job` before executing. The `$command->job`
-         * check acts as a re-entry guard so we only prepare and wrap the command with lifecycle
-         * middleware once. The `->finally()` below clears it after the pipeline completes,
-         * allowing for subsequent execution of the same command instance if needed.
-         */
-        return match (! $command instanceof Action || $command->job) {
-            true => $this->decorated->dispatchNow($command, $handler),
-            false => (new DetectsInterruption(app()))->send(
-                $command->prepareFor(Invocation::Now)
+        return match (true) {
+            $command instanceof Action && ! $command->job => $this->dispatchNowThroughLifecycle($command, $handler),
+            default => $this->decorated->dispatchNow($command, $handler),
+        };
+    }
+
+    /**
+     * @param  mixed  $handler
+     * @return mixed
+     */
+    private function dispatchNowThroughLifecycle(Action $command, $handler)
+    {
+        $command->prepareFor(Invocation::Now);
+
+        $dispatchable = (clone $command)->standalone();
+
+        try {
+            $result = (new DetectsInterruption(app()))->send(
+                $command
             )->through(
                 $command->middleware
-            )->finally(
-                fn () => $command->clearJob()
             )->then(
                 fn ($command) => $this->decorated->dispatchNow($command, $handler)
-            ),
-        };
+            );
+
+            $this->succeeded($command, $dispatchable);
+
+            return $result;
+        } catch (Interrupted $interrupted) {
+            throw $interrupted;
+        } catch (Throwable $throwable) {
+            $this->failed($command, $dispatchable, $throwable);
+
+            throw $throwable;
+        } finally {
+            $command->clearJob();
+        }
     }
 
     /**
@@ -72,5 +99,35 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
         );
 
         return $this->decorated->dispatchSync($command, $handler);
+    }
+
+    private function succeeded(Action $command, Action $dispatchable): void
+    {
+        if ($command->failedOrReleased) {
+            return;
+        }
+
+        when(
+            method_exists($command, 'succeeded'),
+            fn () => rescue(fn () => call_user_func([$command, 'succeeded']), report: true)
+        );
+
+        when(
+            $command->declares(DispatchAfterSyncSucceeded::class),
+            fn () => rescue(fn () => $dispatchable->dispatch(), report: true) // @phpstan-ignore argument.templateType
+        );
+    }
+
+    private function failed(Action $command, Action $dispatchable, Throwable $throwable): void
+    {
+        when(
+            method_exists($command, 'failed'),
+            fn () => rescue(fn () => call_user_func([$command, 'failed'], $throwable), report: true)
+        );
+
+        when(
+            $command->declares(DispatchAfterSyncFailed::class),
+            fn () => rescue(fn () => $dispatchable->dispatch(), report: true) // @phpstan-ignore argument.templateType
+        );
     }
 }

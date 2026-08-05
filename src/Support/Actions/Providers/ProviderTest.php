@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Artisan;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Support\Actions\Bus\Dispatcher;
+use Support\Actions\Queue\CallQueuedHandler;
 use Tests\TestCase;
 
 #[CoversClass(Provider::class)]
@@ -54,6 +55,15 @@ class ProviderTest extends TestCase
         $this->assertInstanceOf(
             Dispatcher::class,
             \Illuminate\Support\Facades\Bus::getFacadeRoot()
+        );
+    }
+
+    #[Test]
+    public function it_decorates_the_call_queued_handler(): void
+    {
+        $this->assertInstanceOf(
+            CallQueuedHandler::class,
+            $this->app->make(\Illuminate\Queue\CallQueuedHandler::class)
         );
     }
 }

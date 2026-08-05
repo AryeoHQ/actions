@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Support\Actions\Bus\Pipelines;
+namespace Support\Actions\Pipeline;
 
 use Closure;
 use Illuminate\Pipeline\Pipeline;
-use Support\Actions\Bus\Pipelines\Exceptions\Interrupted;
+use Support\Actions\Pipeline\Exceptions\Interrupted;
 
 final class DetectsInterruption extends Pipeline
 {
@@ -23,7 +23,7 @@ final class DetectsInterruption extends Pipeline
      *
      * @param  object|string  $pipe
      *
-     * @throws \Support\Actions\Bus\Pipelines\Exceptions\Interrupted
+     * @throws \Support\Actions\Pipeline\Exceptions\Interrupted
      */
     private function interruptible($pipe, Closure $carry, Closure $stack): Closure
     {

@@ -11,6 +11,7 @@ trait AsAction
     use Dispatchable;
     use Fakeable;
     use HasLifecycle;
+    use InteractsWithChain;
     use InteractsWithJob;
     use Nowable;
 
@@ -25,5 +26,10 @@ trait AsAction
     public function declares(string $attribute): bool
     {
         return (new ReflectionClass($this))->getAttributes($attribute) !== [];
+    }
+
+    public function standalone(): static
+    {
+        return $this->clearJob()->clearChain();
     }
 }

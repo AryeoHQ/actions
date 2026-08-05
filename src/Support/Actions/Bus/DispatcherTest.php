@@ -11,9 +11,8 @@ use Illuminate\Support\Facades\Context;
 use Orchestra\Testbench\Attributes\WithConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use Support\Actions\Bus\Pipelines\Exceptions\Interrupted;
 use Support\Actions\Contracts\Action;
-use Support\Actions\Middleware\Lifecycle\RunSucceeded;
+use Support\Actions\Pipeline\Exceptions\Interrupted;
 use Tests\Fixtures\Support\Orders\Actions\WithoutOverlapping;
 use Tests\Fixtures\Support\Orders\Actions\WithoutOverlappingAndLifecycleHooks;
 use Tests\Fixtures\Support\Orders\NonAction;
@@ -25,7 +24,7 @@ use Tests\TestCase;
 class DispatcherTest extends TestCase
 {
     #[Test]
-    public function it_passes_non_action_commands_through_dispatch_without_lifecycle_middleware(): void
+    public function it_passes_non_action_commands_through_dispatch(): void
     {
         Bus::fake();
 
@@ -33,7 +32,7 @@ class DispatcherTest extends TestCase
 
         dispatch($job);
 
-        $this->assertNotContains(RunSucceeded::class, $job->middleware);
+        Bus::assertDispatched(NonActionQueueable::class);
     }
 
     #[Test]
@@ -117,11 +116,9 @@ class DispatcherTest extends TestCase
 
             $this->fail('Expected '.Interrupted::class.' to be thrown.');
         } catch (Interrupted) {
-            $context = Context::get(Action::class, []);
-
-            $this->assertNotContains(WithoutOverlappingAndLifecycleHooks::HANDLE, $context);
-            $this->assertNotContains(WithoutOverlappingAndLifecycleHooks::SUCCEEDED, $context);
-            $this->assertNotContains(WithoutOverlappingAndLifecycleHooks::FAILED, $context);
+            // Empty proves the whole lifecycle was bypassed: no hook, and no re-dispatched
+            // copy (which would have re-run and pushed its own HANDLE).
+            $this->assertEmpty(Context::get(Action::class, []));
         } finally {
             $lock->release();
         }

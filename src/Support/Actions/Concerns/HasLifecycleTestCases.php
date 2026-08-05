@@ -20,6 +20,7 @@ use Tests\Fixtures\Support\Orders\Actions\WithFailedAndSucceeded;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedThatThrows;
 use Tests\Fixtures\Support\Orders\Actions\WithManualFailAndDispatchAfterSyncFailed;
 use Tests\Fixtures\Support\Orders\Actions\WithMiddleware;
+use Tests\Fixtures\Support\Orders\Actions\WithReleaseAndDispatchAfterSyncSucceeded;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceededAndMiddleware;
 use Tests\Fixtures\Support\Orders\Middleware\WritesToContext;
@@ -229,6 +230,56 @@ trait HasLifecycleTestCases
         WithDispatchAfterSyncSucceeded::make()->now();
 
         $this->assertContains(WithDispatchAfterSyncSucceeded::SUCCEEDED, Context::get(Action::class, []));
+    }
+
+    #[Test]
+    public function it_runs_failed_hook_before_redispatch_on_sync_failure_when_now(): void
+    {
+        try {
+            WithDispatchAfterSyncFailed::make()->now();
+        } catch (RuntimeException) {
+            // expected
+        }
+
+        $this->assertSame(
+            [
+                WithDispatchAfterSyncFailed::HANDLE,
+                WithDispatchAfterSyncFailed::FAILED,
+                WithDispatchAfterSyncFailed::HANDLE,
+                WithDispatchAfterSyncFailed::FAILED,
+            ],
+            Context::get(Action::class, [])
+        );
+    }
+
+    #[Test]
+    public function it_runs_succeeded_hook_before_redispatch_on_sync_success_when_now(): void
+    {
+        WithDispatchAfterSyncSucceeded::make()->now();
+
+        $this->assertSame(
+            [
+                WithDispatchAfterSyncSucceeded::HANDLE,
+                WithDispatchAfterSyncSucceeded::SUCCEEDED,
+                WithDispatchAfterSyncSucceeded::HANDLE,
+                WithDispatchAfterSyncSucceeded::SUCCEEDED,
+            ],
+            Context::get(Action::class, [])
+        );
+    }
+
+    #[Test]
+    public function it_does_not_redispatch_on_sync_success_when_released_when_now(): void
+    {
+        WithReleaseAndDispatchAfterSyncSucceeded::make()->now();
+
+        $context = Context::get(Action::class, []);
+
+        // A released run is not a success, so the DispatchAfterSyncSucceeded re-dispatch must not fire.
+        $this->assertCount(
+            1,
+            array_filter($context, fn ($value) => $value === WithReleaseAndDispatchAfterSyncSucceeded::HANDLE)
+        );
     }
 
     #[Test]
@@ -481,5 +532,41 @@ trait HasLifecycleTestCases
         $context = Context::get(Action::class, []);
 
         $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedSucceeded::HANDLE));
+    }
+
+    #[Test]
+    public function it_runs_failed_hook_before_redispatch_on_sync_failure_when_dispatch_sync(): void
+    {
+        try {
+            dispatch_sync(WithDispatchAfterSyncFailed::make());
+        } catch (RuntimeException) {
+            // expected
+        }
+
+        $this->assertSame(
+            [
+                WithDispatchAfterSyncFailed::HANDLE,
+                WithDispatchAfterSyncFailed::FAILED,
+                WithDispatchAfterSyncFailed::HANDLE,
+                WithDispatchAfterSyncFailed::FAILED,
+            ],
+            Context::get(Action::class, [])
+        );
+    }
+
+    #[Test]
+    public function it_runs_succeeded_hook_before_redispatch_on_sync_success_when_dispatch_sync(): void
+    {
+        dispatch_sync(WithDispatchAfterSyncSucceeded::make());
+
+        $this->assertSame(
+            [
+                WithDispatchAfterSyncSucceeded::HANDLE,
+                WithDispatchAfterSyncSucceeded::SUCCEEDED,
+                WithDispatchAfterSyncSucceeded::HANDLE,
+                WithDispatchAfterSyncSucceeded::SUCCEEDED,
+            ],
+            Context::get(Action::class, [])
+        );
     }
 }
