@@ -20,7 +20,7 @@ final class WithFailedAndSucceeded implements Action
 
     public function handle(): never
     {
-        throw new RuntimeException('Action failed intentionally');
+        throw new RuntimeException;
     }
 
     public function succeeded(): void

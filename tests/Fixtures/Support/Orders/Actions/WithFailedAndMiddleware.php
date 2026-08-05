@@ -28,7 +28,7 @@ final class WithFailedAndMiddleware implements Action
     {
         Context::push(Action::class, self::HANDLE);
 
-        throw new RuntimeException('Action failed intentionally');
+        throw new RuntimeException;
     }
 
     public function failed(Throwable $exception): void

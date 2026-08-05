@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Support\Actions\Providers;
 
+use Illuminate\Contracts\Bus\Dispatcher as DispatcherContract;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\ServiceProvider;
 use Support\Actions\Bus\Dispatcher;
 use Support\Actions\Commands\MakeAction;
+use Support\Actions\Queue\CallQueuedHandler;
 
 final class Provider extends ServiceProvider
 {
@@ -15,6 +18,15 @@ final class Provider extends ServiceProvider
         $this->app->extend(
             \Illuminate\Bus\Dispatcher::class,
             fn (\Illuminate\Bus\Dispatcher $dispatcher, $app) => new Dispatcher($dispatcher)
+        );
+
+        $this->app->extend(
+            \Illuminate\Queue\CallQueuedHandler::class,
+            fn (\Illuminate\Queue\CallQueuedHandler $handler, Container $app) => new CallQueuedHandler(
+                $handler,
+                $app->make(DispatcherContract::class),
+                $app,
+            )
         );
 
         if ($this->app->runningInConsole()) {

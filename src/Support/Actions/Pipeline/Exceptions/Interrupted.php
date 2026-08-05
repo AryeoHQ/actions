@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Support\Actions\Bus\Pipelines\Exceptions;
+namespace Support\Actions\Pipeline\Exceptions;
 
 use RuntimeException;
 

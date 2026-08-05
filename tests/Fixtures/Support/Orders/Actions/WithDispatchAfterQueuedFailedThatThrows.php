@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Support\Orders\Actions;
 
-use Illuminate\Support\Facades\Context;
+use LogicException;
 use RuntimeException;
 use Support\Actions\Attributes\DispatchAfterQueuedFailed;
 use Support\Actions\Concerns\AsAction;
@@ -12,25 +12,19 @@ use Support\Actions\Contracts\Action;
 use Throwable;
 
 #[DispatchAfterQueuedFailed]
-final class WithDispatchAfterQueuedFailed implements Action
+final class WithDispatchAfterQueuedFailedThatThrows implements Action
 {
     use AsAction;
 
-    public int $tries = 3;
-
-    public const HANDLE = self::class.'::handle';
-
-    public const FAILED = self::class.'::failed';
+    public int $tries = 1;
 
     public function handle(): never
     {
-        Context::push(Action::class, self::HANDLE);
-
         throw new RuntimeException;
     }
 
-    public function failed(Throwable $exception): void
+    public function failed(Throwable $exception): never
     {
-        Context::push(Action::class, self::FAILED);
+        throw new LogicException;
     }
 }

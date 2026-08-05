@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Support\Orders\Actions;
 
+use LogicException;
 use RuntimeException;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
@@ -20,6 +21,6 @@ final class WithFailedThatThrows implements Action
 
     public function failed(Throwable $exception): void
     {
-        throw new \LogicException('failed() threw');
+        throw new LogicException;
     }
 }

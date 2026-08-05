@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Support\Actions\Bus\Pipelines;
+namespace Support\Actions\Pipeline;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use stdClass;
-use Support\Actions\Bus\Pipelines\Exceptions\Interrupted;
+use Support\Actions\Pipeline\Exceptions\Interrupted;
 use Tests\Fixtures\Support\Orders\Middleware\Blocks;
 use Tests\TestCase;
 

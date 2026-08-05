@@ -18,6 +18,8 @@ interface Action extends ShouldQueue
 
     public function prepareFor(Invocation $via): static;
 
+    public null|Invocation $invokedVia { get; }
+
     /**
      * @param  class-string  $attribute
      */
@@ -41,6 +43,16 @@ interface Action extends ShouldQueue
      * @return $this
      */
     public function clearJob(): static;
+
+    /**
+     * @return $this
+     */
+    public function clearChain(): static;
+
+    /**
+     * @return $this
+     */
+    public function standalone(): static;
 
     /**
      * This implementation is provided to `AsAction` by `\Illuminate\Foundation\Queue\Queueable`.
