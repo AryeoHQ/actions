@@ -14,8 +14,12 @@ final class WithFailed implements Action
 {
     use AsAction;
 
+    public const HANDLE = self::class.'::handle';
+
     public function handle(): never
     {
+        Context::push(Action::class, self::HANDLE);
+
         throw new RuntimeException('Action failed intentionally');
     }
 

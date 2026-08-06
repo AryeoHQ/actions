@@ -153,7 +153,7 @@ trait DispatchableTestCases
 
         WithSucceeded::make($order)->dispatch()->through([WritesToContext::class]);
 
-        $this->assertSame([WritesToContext::class, WithSucceeded::class], Context::get(Action::class));
+        $this->assertSame([WritesToContext::class, WithSucceeded::HANDLE, WithSucceeded::class], Context::get(Action::class));
     }
 
     #[Test]

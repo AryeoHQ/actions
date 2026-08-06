@@ -7,12 +7,6 @@ namespace Support\Actions\Queue;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Queue\Job;
-use Illuminate\Queue\Jobs\SyncJob;
-use Support\Actions\Attributes\DispatchAfterQueuedFailed;
-use Support\Actions\Attributes\DispatchAfterQueuedSucceeded;
-use Support\Actions\Attributes\DispatchAfterSyncFailed;
-use Support\Actions\Attributes\DispatchAfterSyncSucceeded;
-use Support\Actions\Bus\Invocation;
 use Support\Actions\Contracts\Action;
 
 class CallQueuedHandler extends \Illuminate\Queue\CallQueuedHandler
@@ -36,7 +30,7 @@ class CallQueuedHandler extends \Illuminate\Queue\CallQueuedHandler
         // The framework has no success hook, we re-attach the job to match the framework's behavior on the failed hook.
         when(
             ! $job->hasFailed() && ! $job->isReleased() && $this->isAction($data),
-            fn () => $this->afterSuccess($this->setJobInstanceIfNecessary($job, $this->getCommand($data)), $job)
+            fn () => $this->afterSuccess($this->setJobInstanceIfNecessary($job, $this->getCommand($data)))
         );
     }
 
@@ -50,42 +44,30 @@ class CallQueuedHandler extends \Illuminate\Queue\CallQueuedHandler
         } finally { // Ensure re-dispatch even if the job's failed() throws.
             when(
                 $this->isAction($data),
-                fn () => $this->afterFailure($this->getCommand($data), $job)
+                fn () => $this->afterFailure($this->getCommand($data))
             );
         }
     }
 
-    private function afterSuccess(Action $action, Job $job): void
+    private function afterSuccess(Action $action): void
     {
         when(
             method_exists($action, 'succeeded'),
             fn () => rescue(fn () => call_user_func([$action, 'succeeded']), report: true)
         );
 
-        $this->redispatch($action, $job, failed: false);
+        $this->redispatch($action, $action->dispatchesAfterSucceeded);
     }
 
-    private function afterFailure(Action $action, null|Job $job): void
+    private function afterFailure(Action $action): void
     {
-        $this->redispatch($action, $job, failed: true);
+        $this->redispatch($action, $action->dispatchesAfterFailed);
     }
 
-    private function redispatch(Action $action, null|Job $job, bool $failed): void
+    private function redispatch(Action $action, bool $should): void
     {
-        $attribute = match (true) {
-            ! $job instanceof SyncJob => match ($failed) {
-                true => DispatchAfterQueuedFailed::class,
-                false => DispatchAfterQueuedSucceeded::class,
-            },
-            $action->invokedVia === Invocation::Sync => match ($failed) {
-                true => DispatchAfterSyncFailed::class,
-                false => DispatchAfterSyncSucceeded::class,
-            },
-            default => null,
-        };
-
         when(
-            $attribute !== null && $action->declares($attribute),
+            $should,
             fn () => rescue(fn () => (clone $action)->standalone()->dispatch(), report: true) // @phpstan-ignore argument.templateType
         );
     }

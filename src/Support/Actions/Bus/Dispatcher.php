@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Support\Actions\Bus;
 
-use Support\Actions\Attributes\DispatchAfterSyncFailed;
-use Support\Actions\Attributes\DispatchAfterSyncSucceeded;
 use Support\Actions\Contracts\Action;
 use Support\Actions\Pipeline\DetectsInterruption;
 use Support\Actions\Pipeline\Exceptions\Interrupted;
@@ -45,7 +43,7 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
      */
     private function dispatchNowThroughLifecycle(Action $command, $handler)
     {
-        $command->prepareFor(Invocation::Now);
+        $command->initialize();
 
         $dispatchable = (clone $command)->standalone();
 
@@ -80,7 +78,7 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
     {
         when(
             $command instanceof Action,
-            fn () => $command->prepareFor(Invocation::Dispatch)
+            fn () => $command->initialize()
         );
 
         return $this->decorated->dispatch($command);
@@ -95,7 +93,7 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
     {
         when(
             $command instanceof Action,
-            fn () => $command->prepareFor(Invocation::Sync)
+            fn () => $command->initialize()
         );
 
         return $this->decorated->dispatchSync($command, $handler);
@@ -113,7 +111,7 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
         );
 
         when(
-            $command->declares(DispatchAfterSyncSucceeded::class),
+            $command->dispatchesAfterSucceeded,
             fn () => rescue(fn () => $dispatchable->dispatch(), report: true) // @phpstan-ignore argument.templateType
         );
     }
@@ -126,7 +124,7 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
         );
 
         when(
-            $command->declares(DispatchAfterSyncFailed::class),
+            $command->dispatchesAfterFailed,
             fn () => rescue(fn () => $dispatchable->dispatch(), report: true) // @phpstan-ignore argument.templateType
         );
     }

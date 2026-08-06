@@ -6,7 +6,6 @@ namespace Support\Actions\Contracts;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\PendingDispatch;
-use Support\Actions\Bus\Invocation;
 
 interface Action extends ShouldQueue
 {
@@ -16,14 +15,26 @@ interface Action extends ShouldQueue
 
     public function now(): mixed;
 
-    public function prepareFor(Invocation $via): static;
+    public function initialize(): static;
 
-    public null|Invocation $invokedVia { get; }
+    public bool $dispatchesAfterSucceeded { get; }
+
+    public bool $dispatchesAfterFailed { get; }
 
     /**
-     * @param  class-string  $attribute
+     * @return $this
      */
-    public function declares(string $attribute): bool;
+    public function dispatchAfterSucceeded(): static;
+
+    /**
+     * @return $this
+     */
+    public function dispatchAfterFailed(): static;
+
+    /**
+     * @return $this
+     */
+    public function clearDispatchAfter(): static;
 
     public bool $runningInQueue { get; }
 

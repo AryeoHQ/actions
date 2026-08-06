@@ -13,6 +13,8 @@ final class WithSucceeded implements Action
 {
     use AsAction;
 
+    public const HANDLE = self::class.'::handle';
+
     public readonly Order $order;
 
     public function __construct(Order $order)
@@ -22,6 +24,8 @@ final class WithSucceeded implements Action
 
     public function handle(): string
     {
+        Context::push(Action::class, self::HANDLE);
+
         return $this->order->name.': archived';
     }
 

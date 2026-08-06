@@ -4,23 +4,17 @@ declare(strict_types=1);
 
 namespace Support\Actions\Concerns;
 
-use Illuminate\Queue\ManuallyFailedException;
 use Illuminate\Support\Facades\Context;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Support\Actions\Contracts\Action;
 use Tests\Fixtures\Support\Orders\Actions\Archive;
-use Tests\Fixtures\Support\Orders\Actions\WithDispatchAfterQueuedFailed;
-use Tests\Fixtures\Support\Orders\Actions\WithDispatchAfterQueuedSucceeded;
-use Tests\Fixtures\Support\Orders\Actions\WithDispatchAfterSyncFailed;
-use Tests\Fixtures\Support\Orders\Actions\WithDispatchAfterSyncSucceeded;
 use Tests\Fixtures\Support\Orders\Actions\WithFailed;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedAndMiddleware;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedAndSucceeded;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedThatThrows;
-use Tests\Fixtures\Support\Orders\Actions\WithManualFailAndDispatchAfterSyncFailed;
 use Tests\Fixtures\Support\Orders\Actions\WithMiddleware;
-use Tests\Fixtures\Support\Orders\Actions\WithReleaseAndDispatchAfterSyncSucceeded;
+use Tests\Fixtures\Support\Orders\Actions\WithRelease;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceededAndMiddleware;
 use Tests\Fixtures\Support\Orders\Middleware\WritesToContext;
@@ -63,8 +57,9 @@ trait HasLifecycleTestCases
             }
         );
 
-        $this->assertCount(3, Context::get(Action::class));
-        $this->assertContains(WithSucceeded::class, Context::get(Action::class));
+        $context = Context::get(Action::class);
+
+        $this->assertCount(3, array_filter($context, fn ($value) => $value === WithSucceeded::class));
     }
 
     #[Test]
@@ -170,83 +165,69 @@ trait HasLifecycleTestCases
     public function it_redispatches_on_sync_failure_when_now(): void
     {
         try {
-            WithDispatchAfterSyncFailed::make()->now();
+            WithFailed::make()->dispatchAfterFailed()->now();
         } catch (RuntimeException) {
             // expected
         }
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithDispatchAfterSyncFailed::HANDLE));
+        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithFailed::HANDLE));
     }
 
     #[Test]
-    public function it_redispatches_on_sync_failure_when_fail_is_called_when_now(): void
+    public function it_still_calls_failed_when_dispatch_after_failed_when_now(): void
     {
         try {
-            WithManualFailAndDispatchAfterSyncFailed::make()->now();
-        } catch (ManuallyFailedException) {
-            // expected
-        }
-
-        $context = Context::get(Action::class, []);
-
-        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithManualFailAndDispatchAfterSyncFailed::HANDLE));
-    }
-
-    #[Test]
-    public function it_still_calls_failed_when_dispatch_after_sync_failed_when_now(): void
-    {
-        try {
-            WithDispatchAfterSyncFailed::make()->now();
+            WithFailed::make()->dispatchAfterFailed()->now();
         } catch (RuntimeException) {
             // expected
         }
 
-        $this->assertContains(WithDispatchAfterSyncFailed::FAILED, Context::get(Action::class, []));
+        $this->assertContains(WithFailed::class, Context::get(Action::class, []));
     }
 
     #[Test]
-    public function it_rethrows_exception_when_dispatch_after_sync_failed_when_now(): void
+    public function it_rethrows_exception_when_dispatch_after_failed_when_now(): void
     {
         $this->expectException(RuntimeException::class);
 
-        WithDispatchAfterSyncFailed::make()->now();
+        WithFailed::make()->dispatchAfterFailed()->now();
     }
 
     #[Test]
     public function it_redispatches_on_sync_success_when_now(): void
     {
-        WithDispatchAfterSyncSucceeded::make()->now();
+        WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded()->now();
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithDispatchAfterSyncSucceeded::HANDLE));
+        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithSucceeded::HANDLE));
     }
 
     #[Test]
-    public function it_still_calls_succeeded_when_dispatch_after_sync_succeeded_when_now(): void
+    public function it_still_calls_succeeded_when_dispatch_after_succeeded_when_now(): void
     {
-        WithDispatchAfterSyncSucceeded::make()->now();
+        WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded()->now();
 
-        $this->assertContains(WithDispatchAfterSyncSucceeded::SUCCEEDED, Context::get(Action::class, []));
+        $this->assertContains(WithSucceeded::class, Context::get(Action::class, []));
     }
 
     #[Test]
     public function it_runs_failed_hook_before_redispatch_on_sync_failure_when_now(): void
     {
         try {
-            WithDispatchAfterSyncFailed::make()->now();
+            WithFailed::make()->dispatchAfterFailed()->now();
         } catch (RuntimeException) {
             // expected
         }
 
         $this->assertSame(
             [
-                WithDispatchAfterSyncFailed::HANDLE,
-                WithDispatchAfterSyncFailed::FAILED,
-                WithDispatchAfterSyncFailed::HANDLE,
-                WithDispatchAfterSyncFailed::FAILED,
+                WithFailed::HANDLE,
+                WithFailed::class,
+                WithFailed::HANDLE,
+                WithFailed::class,
             ],
             Context::get(Action::class, [])
         );
@@ -255,14 +236,14 @@ trait HasLifecycleTestCases
     #[Test]
     public function it_runs_succeeded_hook_before_redispatch_on_sync_success_when_now(): void
     {
-        WithDispatchAfterSyncSucceeded::make()->now();
+        WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded()->now();
 
         $this->assertSame(
             [
-                WithDispatchAfterSyncSucceeded::HANDLE,
-                WithDispatchAfterSyncSucceeded::SUCCEEDED,
-                WithDispatchAfterSyncSucceeded::HANDLE,
-                WithDispatchAfterSyncSucceeded::SUCCEEDED,
+                WithSucceeded::HANDLE,
+                WithSucceeded::class,
+                WithSucceeded::HANDLE,
+                WithSucceeded::class,
             ],
             Context::get(Action::class, [])
         );
@@ -271,39 +252,15 @@ trait HasLifecycleTestCases
     #[Test]
     public function it_does_not_redispatch_on_sync_success_when_released_when_now(): void
     {
-        WithReleaseAndDispatchAfterSyncSucceeded::make()->now();
+        WithRelease::make()->dispatchAfterSucceeded()->now();
 
         $context = Context::get(Action::class, []);
 
-        // A released run is not a success, so the DispatchAfterSyncSucceeded re-dispatch must not fire.
+        // A released run is not a success, so the success re-dispatch must not fire.
         $this->assertCount(
             1,
-            array_filter($context, fn ($value) => $value === WithReleaseAndDispatchAfterSyncSucceeded::HANDLE)
+            array_filter($context, fn ($value) => $value === WithRelease::HANDLE)
         );
-    }
-
-    #[Test]
-    public function it_does_not_dispatch_queued_failed_when_now(): void
-    {
-        try {
-            WithDispatchAfterQueuedFailed::make()->now();
-        } catch (RuntimeException) {
-            // expected
-        }
-
-        $context = Context::get(Action::class, []);
-
-        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedFailed::HANDLE));
-    }
-
-    #[Test]
-    public function it_does_not_dispatch_queued_succeeded_when_now(): void
-    {
-        WithDispatchAfterQueuedSucceeded::make()->now();
-
-        $context = Context::get(Action::class, []);
-
-        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedSucceeded::HANDLE));
     }
 
     #[Test]
@@ -340,8 +297,9 @@ trait HasLifecycleTestCases
             }
         );
 
-        $this->assertCount(3, Context::get(Action::class));
-        $this->assertContains(WithSucceeded::class, Context::get(Action::class));
+        $context = Context::get(Action::class);
+
+        $this->assertCount(3, array_filter($context, fn ($value) => $value === WithSucceeded::class));
     }
 
     #[Test]
@@ -438,30 +396,6 @@ trait HasLifecycleTestCases
     }
 
     #[Test]
-    public function it_does_not_dispatch_queued_failed_with_sync_driver_when_dispatch(): void
-    {
-        try {
-            WithDispatchAfterQueuedFailed::make()->dispatch();
-        } catch (RuntimeException) {
-            // expected
-        }
-
-        $context = Context::get(Action::class, []);
-
-        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedFailed::HANDLE));
-    }
-
-    #[Test]
-    public function it_does_not_dispatch_queued_succeeded_with_sync_driver_when_dispatch(): void
-    {
-        WithDispatchAfterQueuedSucceeded::make()->dispatch();
-
-        $context = Context::get(Action::class, []);
-
-        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedSucceeded::HANDLE));
-    }
-
-    #[Test]
     public function it_calls_succeeded_after_dispatch_sync_completes(): void
     {
         $order = Order::factory()->make();
@@ -488,67 +422,43 @@ trait HasLifecycleTestCases
     public function it_redispatches_on_sync_failure_when_dispatch_sync(): void
     {
         try {
-            dispatch_sync(WithDispatchAfterSyncFailed::make());
+            dispatch_sync(WithFailed::make()->dispatchAfterFailed());
         } catch (RuntimeException) {
             // expected
         }
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithDispatchAfterSyncFailed::HANDLE));
-        $this->assertContains(WithDispatchAfterSyncFailed::FAILED, $context);
+        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithFailed::HANDLE));
+        $this->assertContains(WithFailed::class, $context);
     }
 
     #[Test]
     public function it_redispatches_on_sync_success_when_dispatch_sync(): void
     {
-        dispatch_sync(WithDispatchAfterSyncSucceeded::make());
+        dispatch_sync(WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded());
 
         $context = Context::get(Action::class, []);
 
-        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithDispatchAfterSyncSucceeded::HANDLE));
-        $this->assertContains(WithDispatchAfterSyncSucceeded::SUCCEEDED, $context);
-    }
-
-    #[Test]
-    public function it_does_not_dispatch_queued_failed_when_dispatch_sync(): void
-    {
-        try {
-            dispatch_sync(WithDispatchAfterQueuedFailed::make());
-        } catch (RuntimeException) {
-            // expected
-        }
-
-        $context = Context::get(Action::class, []);
-
-        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedFailed::HANDLE));
-    }
-
-    #[Test]
-    public function it_does_not_dispatch_queued_succeeded_when_dispatch_sync(): void
-    {
-        dispatch_sync(WithDispatchAfterQueuedSucceeded::make());
-
-        $context = Context::get(Action::class, []);
-
-        $this->assertCount(1, array_filter($context, fn ($value) => $value === WithDispatchAfterQueuedSucceeded::HANDLE));
+        $this->assertCount(2, array_filter($context, fn ($value) => $value === WithSucceeded::HANDLE));
+        $this->assertContains(WithSucceeded::class, $context);
     }
 
     #[Test]
     public function it_runs_failed_hook_before_redispatch_on_sync_failure_when_dispatch_sync(): void
     {
         try {
-            dispatch_sync(WithDispatchAfterSyncFailed::make());
+            dispatch_sync(WithFailed::make()->dispatchAfterFailed());
         } catch (RuntimeException) {
             // expected
         }
 
         $this->assertSame(
             [
-                WithDispatchAfterSyncFailed::HANDLE,
-                WithDispatchAfterSyncFailed::FAILED,
-                WithDispatchAfterSyncFailed::HANDLE,
-                WithDispatchAfterSyncFailed::FAILED,
+                WithFailed::HANDLE,
+                WithFailed::class,
+                WithFailed::HANDLE,
+                WithFailed::class,
             ],
             Context::get(Action::class, [])
         );
@@ -557,14 +467,14 @@ trait HasLifecycleTestCases
     #[Test]
     public function it_runs_succeeded_hook_before_redispatch_on_sync_success_when_dispatch_sync(): void
     {
-        dispatch_sync(WithDispatchAfterSyncSucceeded::make());
+        dispatch_sync(WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded());
 
         $this->assertSame(
             [
-                WithDispatchAfterSyncSucceeded::HANDLE,
-                WithDispatchAfterSyncSucceeded::SUCCEEDED,
-                WithDispatchAfterSyncSucceeded::HANDLE,
-                WithDispatchAfterSyncSucceeded::SUCCEEDED,
+                WithSucceeded::HANDLE,
+                WithSucceeded::class,
+                WithSucceeded::HANDLE,
+                WithSucceeded::class,
             ],
             Context::get(Action::class, [])
         );
