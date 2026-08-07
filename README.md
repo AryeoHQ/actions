@@ -307,74 +307,24 @@ $result = rescue(fn () => ProcessOrder::make($order)->now(), $fallbackValue);
 
 ## Automatic Post-Execution Dispatching
 
-Actions can be automatically dispatched to the queue after execution. This allows an action that was executed synchronously via `now()` to also be placed onto the queue, or an action that was already queued to be dispatched again after completion.
+An action can re-dispatch a fresh copy of itself to the queue after it runs. You opt in per call, fluently, on the invocation you want the follow-up for:
 
-Four attributes are available, covering both sync and queued execution paths:
-
-| Attribute | Triggers When |
+| Method | Triggers the follow-up dispatch when |
 |---|---|
-| `#[DispatchAfterSyncSucceeded]` | `now()` completes successfully |
-| `#[DispatchAfterSyncFailed]` | `now()` throws an exception |
-| `#[DispatchAfterQueuedSucceeded]` | Queued execution completes successfully |
-| `#[DispatchAfterQueuedFailed]` | Queued execution fails terminally (exhausted `$tries`, `maxExceptions`, `retryUntil`, timeout, or worker `--tries`) |
+| `dispatchAfterSucceeded()` | the run completes successfully |
+| `dispatchAfterFailed()` | the run fails |
 
-In every case the re-dispatch happens **after** the corresponding `succeeded()` / `failed()` lifecycle hook has run, so cleanup or compensation in a hook is guaranteed to complete before the follow-up copy is enqueued.
+The choice is per invocation, not baked into the class — one caller can opt in while another leaves it off. It works the same on every transport (`now()`, `dispatch()`, `dispatchSync()`, any driver).
 
 ```php
-use Support\Actions\Attributes\DispatchAfterSyncSucceeded;
-use Support\Actions\Concerns\AsAction;
-use Support\Actions\Contracts\Action;
+ProcessOrder::make($order)->dispatchAfterSucceeded()->now();
 
-#[DispatchAfterSyncSucceeded]
-final class ProcessOrder implements Action
-{
-    use AsAction;
-
-    public readonly Order $order;
-
-    public function __construct(Order $order)
-    {
-        $this->order = $order;
-    }
-
-    public function handle(): TrackingNumber
-    {
-        // Business logic
-    }
-}
+ProcessOrder::make($order)->dispatchAfterFailed()->dispatch();
 ```
 
-When `ProcessOrder::make($order)->now()` is called, the action executes synchronously and returns the result. After `handle()` completes successfully, the action is dispatched to the queue.
+The re-dispatch happens **after** the corresponding `succeeded()` / `failed()` lifecycle hook has run, so cleanup or compensation in a hook is guaranteed to complete before the follow-up copy is enqueued.
 
-Attributes can be combined freely. For example, an action that should always end up on the queue regardless of outcome:
-
-```php
-#[DispatchAfterSyncSucceeded]
-#[DispatchAfterSyncFailed]
-final class ProcessOrder implements Action
-{
-    use AsAction;
-
-    // ...
-}
-```
-
-Or an action that re-dispatches itself after queued execution:
-
-```php
-#[DispatchAfterQueuedSucceeded]
-#[DispatchAfterQueuedFailed]
-final class ProcessOrder implements Action
-{
-    use AsAction;
-
-    public int $tries = 3;
-
-    // ...
-}
-```
-
-> **Note:** `#[DispatchAfterQueuedFailed]` requires a `$tries` property to be defined, enforced by a PHPStan rule. `$tries` bounds retries so the action reaches terminal failure (and thus re-dispatches) instead of retrying forever.
+The follow-up is **one-shot**: the re-dispatched copy does not carry the flag, so it will not re-dispatch itself again. To follow up on the copy too, opt in again at that call site.
 
 ## Queue Features
 
@@ -382,7 +332,7 @@ Actions work exactly like Laravel Jobs and support all queue features including 
 
 - `Dispatchable` - Custom implementation for action dispatching (composes `Queueable` internally)
 - `InteractsWithJob` - Job-state behavior shared by the sync and queue paths (composes `InteractsWithQueue` internally); provides `$runningInQueue`, `fail()`, `clearJob()`, `$attempts`, `$failed`, `$released`, `$failedOrReleased`, `$attemptsLimited`, `$attemptsExhausted`
-- `InteractsWithChain` - provides `clearChain()`; used with `clearJob()` by `standalone()` to detach a copy from its run before re-dispatch
+- `InteractsWithChain` - provides `clearChain()`; used by `standalone()` (with `clearJob()` and `clearDispatchAfter()`) to detach a copy from its run before re-dispatch
 - `Fakeable` - Testing support with fake actions
 - `Nowable` - Synchronous execution support
 

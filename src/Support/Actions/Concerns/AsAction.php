@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Support\Actions\Concerns;
 
-use ReflectionClass;
-
 trait AsAction
 {
     use Dispatchable;
@@ -20,16 +18,8 @@ trait AsAction
         return new static(...$arguments); // @phpstan-ignore-line
     }
 
-    /**
-     * @param  class-string  $attribute
-     */
-    public function declares(string $attribute): bool
-    {
-        return (new ReflectionClass($this))->getAttributes($attribute) !== [];
-    }
-
     public function standalone(): static
     {
-        return $this->clearJob()->clearChain();
+        return $this->clearJob()->clearChain()->clearDispatchAfter();
     }
 }

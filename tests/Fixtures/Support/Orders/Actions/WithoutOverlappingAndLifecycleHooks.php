@@ -6,14 +6,10 @@ namespace Tests\Fixtures\Support\Orders\Actions;
 
 use Illuminate\Queue\Middleware\WithoutOverlapping as WithoutOverlappingMiddleware;
 use Illuminate\Support\Facades\Context;
-use Support\Actions\Attributes\DispatchAfterSyncFailed;
-use Support\Actions\Attributes\DispatchAfterSyncSucceeded;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 use Throwable;
 
-#[DispatchAfterSyncFailed]
-#[DispatchAfterSyncSucceeded]
 final class WithoutOverlappingAndLifecycleHooks implements Action
 {
     use AsAction;

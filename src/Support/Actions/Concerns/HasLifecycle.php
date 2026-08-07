@@ -4,17 +4,37 @@ declare(strict_types=1);
 
 namespace Support\Actions\Concerns;
 
-use Support\Actions\Bus\Invocation;
-
 trait HasLifecycle
 {
-    public null|Invocation $invokedVia = null;
+    public bool $dispatchesAfterSucceeded = false;
 
-    public function prepareFor(Invocation $via): static
+    public bool $dispatchesAfterFailed = false;
+
+    public function dispatchAfterSucceeded(): static
+    {
+        $this->dispatchesAfterSucceeded = true;
+
+        return $this;
+    }
+
+    public function dispatchAfterFailed(): static
+    {
+        $this->dispatchesAfterFailed = true;
+
+        return $this;
+    }
+
+    public function clearDispatchAfter(): static
+    {
+        $this->dispatchesAfterSucceeded = false;
+        $this->dispatchesAfterFailed = false;
+
+        return $this;
+    }
+
+    public function initialize(): static
     {
         $this->clearJob();
-
-        $this->invokedVia = $via;
 
         when(
             method_exists($this, 'prepare'), // @phpstan-ignore function.impossibleType, function.alreadyNarrowedType

@@ -10,14 +10,13 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
-use Support\Actions\Bus\Invocation;
 use Support\Actions\Contracts\Action;
 use Tests\Fixtures\Support\Actions\Queue\QueuedJob;
-use Tests\Fixtures\Support\Orders\Actions\WithDispatchAfterQueuedFailed;
-use Tests\Fixtures\Support\Orders\Actions\WithDispatchAfterQueuedFailedThatThrows;
-use Tests\Fixtures\Support\Orders\Actions\WithDispatchAfterQueuedSucceeded;
-use Tests\Fixtures\Support\Orders\Actions\WithDispatchAfterSyncSucceeded;
+use Tests\Fixtures\Support\Orders\Actions\WithFailed;
+use Tests\Fixtures\Support\Orders\Actions\WithFailedThatThrows;
 use Tests\Fixtures\Support\Orders\Actions\WithHooksRecordingJobState;
+use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
+use Tests\Fixtures\Support\Orders\Order;
 use Tests\TestCase;
 
 #[CoversClass(CallQueuedHandler::class)]
@@ -28,14 +27,14 @@ class CallQueuedHandlerTest extends TestCase
     {
         Queue::fake();
 
-        $action = WithDispatchAfterQueuedSucceeded::make()->prepareFor(Invocation::Dispatch);
+        $action = WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded()->initialize();
 
         resolve(\Illuminate\Queue\CallQueuedHandler::class)->call(
             new QueuedJob,
             $this->payloadFor($action),
         );
 
-        Queue::assertPushed(WithDispatchAfterQueuedSucceeded::class);
+        Queue::assertPushed(WithSucceeded::class);
     }
 
     #[Test]
@@ -43,7 +42,7 @@ class CallQueuedHandlerTest extends TestCase
     {
         Queue::fake();
 
-        $action = WithDispatchAfterQueuedFailed::make()->prepareFor(Invocation::Dispatch);
+        $action = WithFailed::make()->dispatchAfterFailed()->initialize();
 
         resolve(\Illuminate\Queue\CallQueuedHandler::class)->failed(
             $this->payloadFor($action),
@@ -52,7 +51,7 @@ class CallQueuedHandlerTest extends TestCase
             new QueuedJob,
         );
 
-        Queue::assertPushed(WithDispatchAfterQueuedFailed::class);
+        Queue::assertPushed(WithFailed::class);
     }
 
     #[Test]
@@ -60,9 +59,10 @@ class CallQueuedHandlerTest extends TestCase
     {
         Queue::fake();
 
-        $action = WithDispatchAfterQueuedSucceeded::make()
-            ->prepareFor(Invocation::Dispatch)
-            ->chain([WithDispatchAfterQueuedSucceeded::make()]);
+        $action = WithSucceeded::make(Order::factory()->make())
+            ->dispatchAfterSucceeded()
+            ->initialize()
+            ->chain([WithSucceeded::make(Order::factory()->make())]);
 
         resolve(\Illuminate\Queue\CallQueuedHandler::class)->call(
             new QueuedJob,
@@ -70,8 +70,26 @@ class CallQueuedHandlerTest extends TestCase
         );
 
         Queue::assertPushed(
-            WithDispatchAfterQueuedSucceeded::class,
-            fn (WithDispatchAfterQueuedSucceeded $pushed): bool => $pushed->chained === []
+            WithSucceeded::class,
+            fn (WithSucceeded $pushed): bool => $pushed->chained === []
+        );
+    }
+
+    #[Test]
+    public function it_does_not_redispatch_the_copy_again(): void
+    {
+        Queue::fake();
+
+        $action = WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded()->initialize();
+
+        resolve(\Illuminate\Queue\CallQueuedHandler::class)->call(
+            new QueuedJob,
+            $this->payloadFor($action),
+        );
+
+        Queue::assertPushed(
+            WithSucceeded::class,
+            fn (WithSucceeded $pushed): bool => $pushed->dispatchesAfterSucceeded === false
         );
     }
 
@@ -80,7 +98,7 @@ class CallQueuedHandlerTest extends TestCase
     {
         Queue::fake();
 
-        $action = WithDispatchAfterQueuedFailedThatThrows::make()->prepareFor(Invocation::Dispatch);
+        $action = WithFailedThatThrows::make()->dispatchAfterFailed()->initialize();
 
         try {
             resolve(\Illuminate\Queue\CallQueuedHandler::class)->failed(
@@ -94,7 +112,7 @@ class CallQueuedHandlerTest extends TestCase
             // expected — the hook exception still surfaces to the worker
         }
 
-        Queue::assertPushed(WithDispatchAfterQueuedFailedThatThrows::class);
+        Queue::assertPushed(WithFailedThatThrows::class);
     }
 
     #[Test]
@@ -102,7 +120,7 @@ class CallQueuedHandlerTest extends TestCase
     {
         Queue::fake();
 
-        $action = WithDispatchAfterQueuedSucceeded::make()->prepareFor(Invocation::Dispatch);
+        $action = WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded()->initialize();
 
         resolve(\Illuminate\Queue\CallQueuedHandler::class)->call(
             new QueuedJob(released: true),
@@ -117,7 +135,7 @@ class CallQueuedHandlerTest extends TestCase
     {
         Queue::fake();
 
-        $action = WithDispatchAfterQueuedSucceeded::make()->prepareFor(Invocation::Dispatch);
+        $action = WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded()->initialize();
 
         resolve(\Illuminate\Queue\CallQueuedHandler::class)->call(
             new QueuedJob(failed: true),
@@ -132,15 +150,15 @@ class CallQueuedHandlerTest extends TestCase
     {
         Queue::fake();
 
-        $action = WithDispatchAfterQueuedSucceeded::make()->prepareFor(Invocation::Dispatch);
+        $action = WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded()->initialize();
 
         resolve(\Illuminate\Queue\CallQueuedHandler::class)->call(
             new QueuedJob,
             $this->payloadFor($action),
         );
 
-        $this->assertContains(WithDispatchAfterQueuedSucceeded::SUCCEEDED, Context::get(Action::class, []));
-        Queue::assertPushed(WithDispatchAfterQueuedSucceeded::class);
+        $this->assertContains(WithSucceeded::class, Context::get(Action::class, []));
+        Queue::assertPushed(WithSucceeded::class);
     }
 
     #[Test]
@@ -148,14 +166,14 @@ class CallQueuedHandlerTest extends TestCase
     {
         Queue::fake();
 
-        $action = WithDispatchAfterQueuedSucceeded::make()->prepareFor(Invocation::Dispatch);
+        $action = WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded()->initialize();
 
         resolve(\Illuminate\Queue\CallQueuedHandler::class)->call(
             new QueuedJob(released: true),
             $this->payloadFor($action),
         );
 
-        $this->assertNotContains(WithDispatchAfterQueuedSucceeded::SUCCEEDED, Context::get(Action::class, []));
+        $this->assertNotContains(WithSucceeded::class, Context::get(Action::class, []));
     }
 
     #[Test]
@@ -163,22 +181,22 @@ class CallQueuedHandlerTest extends TestCase
     {
         Queue::fake();
 
-        $action = WithDispatchAfterQueuedSucceeded::make()->prepareFor(Invocation::Dispatch);
+        $action = WithSucceeded::make(Order::factory()->make())->dispatchAfterSucceeded()->initialize();
 
         resolve(\Illuminate\Queue\CallQueuedHandler::class)->call(
             new QueuedJob(failed: true),
             $this->payloadFor($action),
         );
 
-        $this->assertNotContains(WithDispatchAfterQueuedSucceeded::SUCCEEDED, Context::get(Action::class, []));
+        $this->assertNotContains(WithSucceeded::class, Context::get(Action::class, []));
     }
 
     #[Test]
-    public function it_does_not_redispatch_sync_attribute_for_a_queued_action(): void
+    public function it_does_not_redispatch_when_no_flag_is_set(): void
     {
         Queue::fake();
 
-        $action = WithDispatchAfterSyncSucceeded::make()->prepareFor(Invocation::Dispatch);
+        $action = WithSucceeded::make(Order::factory()->make())->initialize();
 
         resolve(\Illuminate\Queue\CallQueuedHandler::class)->call(
             new QueuedJob,
@@ -191,7 +209,7 @@ class CallQueuedHandlerTest extends TestCase
     #[Test]
     public function it_attaches_the_job_before_running_the_queued_succeeded_hook(): void
     {
-        $action = WithHooksRecordingJobState::make()->prepareFor(Invocation::Dispatch);
+        $action = WithHooksRecordingJobState::make()->initialize();
 
         resolve(\Illuminate\Queue\CallQueuedHandler::class)->call(
             new QueuedJob,

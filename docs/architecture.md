@@ -14,9 +14,11 @@ All actions implement `Support\Actions\Contracts\Action` and typically use `Supp
 - `make(...$arguments): static`
 - `dispatch(): PendingDispatch`
 - `now(): mixed`
-- `prepareFor(Invocation $via): static`
-- `null|Invocation $invokedVia { get; }`
-- `declares(string $attribute): bool`
+- `initialize(): static`
+- `bool $dispatchesAfterSucceeded { get; }`
+- `bool $dispatchesAfterFailed { get; }`
+- `dispatchAfterSucceeded(): static`
+- `dispatchAfterFailed(): static`
 - `bool $runningInQueue { get; }`
 - `int $attempts { get; }`
 - `bool $failed { get; }`
@@ -26,6 +28,7 @@ All actions implement `Support\Actions\Contracts\Action` and typically use `Supp
 - `bool $attemptsExhausted { get; }`
 - `clearJob(): static`
 - `clearChain(): static`
+- `clearDispatchAfter(): static`
 - `standalone(): static`
 - `through($middleware)`
 
@@ -41,7 +44,7 @@ Composes:
 - `InteractsWithJob`
 - `Nowable`
 
-Also provides `make()`, `declares($attribute)` (reports whether the action class declares the given attribute; used by the two lifecycle decorators to decide re-dispatch), and `standalone()`, which detaches a copy from the run it came from (`clearJob()` + `clearChain()`) so it can be re-dispatched as a fresh, standalone invocation.
+Also provides `make()` and `standalone()`, which detaches a copy from the run it came from (`clearJob()` + `clearChain()` + `clearDispatchAfter()`) so it can be re-dispatched as a fresh, standalone invocation that will not itself re-dispatch.
 
 ### Nowable
 
@@ -75,11 +78,13 @@ Encapsulates all path-agnostic job-state behavior (used by both the sync and que
 
 ### HasLifecycle
 
-Lifecycle preparation is owned in this trait.
+Lifecycle preparation and the re-dispatch flags are owned in this trait.
 
-- `prepareFor(Invocation $via)`:
+- `public bool $dispatchesAfterSucceeded` / `public bool $dispatchesAfterFailed` (default `false`): per-invocation opt-in for the post-execution re-dispatch. They serialize with the payload like any property.
+- `dispatchAfterSucceeded()` / `dispatchAfterFailed()`: fluent setters that turn the flags on and return `$this`.
+- `clearDispatchAfter()`: resets both flags; called by `standalone()` so a re-dispatched copy is one-shot.
+- `initialize()`:
   - clears stale job state via `clearJob()`
-  - records the invocation in `$invokedVia` (serializes with the payload)
   - calls optional consumer `prepare()` if present
 
 ### Fakeable
@@ -96,52 +101,42 @@ Lifecycle preparation is owned in this trait.
 - Non-actions pass directly through.
 - Re-entry guard: if `$command->job` is already set, dispatch passes through directly (queued executions arrive here through the framework `CallQueuedHandler` with a job set; their lifecycle belongs to `Queue\CallQueuedHandler`).
 - Otherwise the decorator owns the full lifecycle:
-  - `prepareFor(Invocation::Now)` is called; a `standalone()` clone (job + chain detached) is captured for potential re-dispatch.
+  - `initialize()` is called; a `standalone()` clone (job + chain + flags detached) is captured for potential re-dispatch.
   - A `DetectsInterruption` pipeline (subclass of `Illuminate\Pipeline\Pipeline`) executes through command middleware. It composes around `Pipeline::carry()` to wrap each pipe, without reimplementing any pipe-invocation mechanics.
-  - On success: `succeeded()` runs (when the method exists and the job is not failed/released — `fail()` + continue and `release()` are not successes), then `DispatchAfterSyncSucceeded` re-dispatch.
-  - On exception: `failed(Throwable)` runs (when the method exists), then `DispatchAfterSyncFailed` re-dispatch, then the original exception rethrows.
+  - On success: `succeeded()` runs (when the method exists and the job is not failed/released — `fail()` + continue and `release()` are not successes), then re-dispatch if `$dispatchesAfterSucceeded`.
+  - On exception: `failed(Throwable)` runs (when the method exists), then re-dispatch if `$dispatchesAfterFailed`, then the original exception rethrows.
   - `Interrupted` is caught first and rethrown untouched: an interruption is neither a success nor a failure — the action never ran — so neither hook nor re-dispatch fires.
   - `finally` clears the job.
   - Hook and re-dispatch failures are wrapped in `rescue(..., report: true)` so they never replace the original outcome.
 
 ### `dispatch()` path
 
-- For actions, `prepareFor(Invocation::Dispatch)` is called before dispatching.
+- For actions, `initialize()` is called before dispatching.
 - Then call delegates to the decorated dispatcher.
 - The entire lifecycle (hooks and re-dispatch) is owned by `Queue\CallQueuedHandler` — see [Queue-mediated lifecycle](#queue-mediated-lifecycle).
 
 ### `dispatchSync()` path
 
-- For actions, `prepareFor(Invocation::Sync)` is called before dispatching.
+- For actions, `initialize()` is called before dispatching.
 - Then call delegates to the decorated dispatcher.
-- Lifecycle is likewise owned by `Queue\CallQueuedHandler`; it fires the `Sync` attributes only when `invokedVia === Invocation::Sync` (i.e. `dispatchSync()`, not `dispatch()` on the sync driver).
+- Lifecycle is likewise owned by `Queue\CallQueuedHandler`, driven by the same flags.
 
 > **Seam rule:** one decorator per execution world. `Bus\Dispatcher` owns the in-process lifecycle (`now()`); `Queue\CallQueuedHandler` owns the queue-mediated lifecycle (`dispatch()`, `dispatchSync()`). In both worlds the invariant is identical: *work → terminal hook → re-dispatch*.
-
-## Invocation
-
-`Support\Actions\Bus\Invocation` tags how an action was invoked. `prepareFor()` records it in `$invokedVia`, which serializes with the payload — the queue-side decorator uses it to distinguish `dispatchSync()` from `dispatch()` on the sync driver. It carries no middleware; lifecycle behavior lives entirely in the two decorators.
 
 ## Queue-mediated lifecycle
 
 `Support\Actions\Queue\CallQueuedHandler` extends `Illuminate\Queue\CallQueuedHandler` and is bound via `app()->extend()` in the provider. It faithfully proxies `call()` and `failed()` into the decorated handler, then runs the lifecycle **after** the framework has fully processed the job — including chain advancement, batch recording, and delete. This mirrors the framework's own convention: `CallQueuedHandler::failed()` runs the command's `failed()` hook *after* `ensureFailedBatchJobIsRecorded()` and `ensureChainCatchCallbacksAreInvoked()`. Success and failure hooks are therefore symmetric — both fire after bookkeeping, then re-dispatch follows the hook, on every terminal path (timeout, `maxExceptions`, worker `--tries`, pre-fire exhaustion).
 
-- Success (`call()`): after the inner handler returns, if `! $job->hasFailed() && ! $job->isReleased()` (the framework's own success predicate) and the payload is an `Action`: run `succeeded()` (when the method exists), then re-dispatch on `DispatchAfterQueuedSucceeded` (real job) or `DispatchAfterSyncSucceeded` (`SyncJob` + `invokedVia === Invocation::Sync`). The command is re-hydrated with `setJobInstanceIfNecessary()` before `succeeded()` runs, so the hook sees run state (`runningInQueue`, `attempts`, `batch()`) — mirroring how the framework re-attaches the job before its own `failed()` hook. Running the hook only after `call()` returns cleanly also means a chain/batch bookkeeping failure can no longer produce a `succeeded()`-then-`failed()` double-fire on a single attempt.
-- Failure (`failed()`): the inner handler runs the command's `failed()` hook (framework-native); then re-dispatch on `DispatchAfterQueuedFailed` (real job) or `DispatchAfterSyncFailed` (`SyncJob` + `invokedVia === Invocation::Sync`). The re-dispatch is in a `finally`, so a `failed()` hook that throws still re-dispatches; the hook exception then propagates to the worker unchanged.
-- Re-dispatch clones the command and calls `standalone()` (clears job + chain) so the re-dispatched copy is a fresh invocation that does not re-run the downstream chain.
+- Success (`call()`): after the inner handler returns, if `! $job->hasFailed() && ! $job->isReleased()` (the framework's own success predicate) and the payload is an `Action`: run `succeeded()` (when the method exists), then re-dispatch if `$dispatchesAfterSucceeded`. The command is re-hydrated with `setJobInstanceIfNecessary()` before `succeeded()` runs, so the hook sees run state (`runningInQueue`, `attempts`, `batch()`) — mirroring how the framework re-attaches the job before its own `failed()` hook. Running the hook only after `call()` returns cleanly also means a chain/batch bookkeeping failure can no longer produce a `succeeded()`-then-`failed()` double-fire on a single attempt.
+- Failure (`failed()`): the inner handler runs the command's `failed()` hook (framework-native); then re-dispatch if `$dispatchesAfterFailed`. The re-dispatch is in a `finally`, so a `failed()` hook that throws still re-dispatches; the hook exception then propagates to the worker unchanged.
+- Re-dispatch clones the command and calls `standalone()` (clears job + chain + flags) so the re-dispatched copy is a fresh invocation that does not re-run the downstream chain and, because its flags are cleared, does not re-dispatch itself again (one-shot).
 - A `commandName` pre-filter avoids unserializing non-action payloads (which would trigger `SerializesModels` DB refetches for every failed job in the app).
 - Hook and re-dispatch failures are wrapped in `rescue(..., report: true)` so they cannot mask the original outcome.
 - Because it proxies into the handler it decorates, it composes with any other `CallQueuedHandler` extenders regardless of position in the chain. It never sees `Interrupted` — that is a `now()`-only concern (`DetectsInterruption` runs only in `dispatchNow()`).
 
-## Attributes
+## Post-execution re-dispatch
 
-Supported class-level marker attributes:
-- `DispatchAfterSyncFailed`
-- `DispatchAfterSyncSucceeded`
-- `DispatchAfterQueuedFailed`
-- `DispatchAfterQueuedSucceeded`
-
-Additional constraint: `DispatchAfterQueuedFailed` requires `$tries`, enforced by a PHPStan rule.
+An action opts an individual invocation into re-dispatching a fresh copy of itself after it runs, via the fluent `dispatchAfterSucceeded()` / `dispatchAfterFailed()` setters (which set `$dispatchesAfterSucceeded` / `$dispatchesAfterFailed`). Both decorators read the flags; the meaning is identical on every transport. Re-dispatch is one-shot — `standalone()` clears the flags on the copy — so a re-dispatched action does not perpetually re-dispatch itself.
 
 ## Testing and Fakes
 
@@ -173,7 +168,6 @@ Custom rules enforce constraints including:
 - `AsAction` usage and contract implementation
 - prohibited trait/method combinations
 - direct `handle()` call prohibition
-- queued-failed attribute tries requirement
 
 ### Rector
 
@@ -189,28 +183,27 @@ The package provider extends Laravel's bus dispatcher binding to use the package
 Sync (`->now()`):
   Nowable::now()
     -> Dispatcher::dispatchNow()
-      -> prepareFor(Invocation::Now)
+      -> initialize()
       -> DetectsInterruption pipeline through command middleware
       -> decorated dispatchNow()
-      -> success: succeeded() -> DispatchAfterSyncSucceeded re-dispatch
-      -> failure: failed($e) -> DispatchAfterSyncFailed re-dispatch -> rethrow
+      -> success: succeeded() -> re-dispatch if $dispatchesAfterSucceeded
+      -> failure: failed($e) -> re-dispatch if $dispatchesAfterFailed -> rethrow
       -> Interrupted: rethrow (no hooks, no re-dispatch)
       -> finally clearJob()
 
 Dispatch (`->dispatch()`):
   Dispatchable::dispatch()
-    -> prepareFor(Invocation::Dispatch)
+    -> initialize()
     -> decorated dispatch
     ... worker picks up the job ...
     -> Queue\CallQueuedHandler::call() / failed()
       -> inner handler (runs action; framework runs failed() hook on terminal failure)
-      -> success: succeeded() -> DispatchAfterQueuedSucceeded re-dispatch
-      -> failure: DispatchAfterQueuedFailed re-dispatch
+      -> success: succeeded() -> re-dispatch if $dispatchesAfterSucceeded
+      -> failure: re-dispatch if $dispatchesAfterFailed
 
 DispatchSync (`dispatchSync()`):
   Dispatcher::dispatchSync()
-    -> prepareFor(Invocation::Sync)
+    -> initialize()
     -> decorated dispatchSync
-    -> same handler path as Dispatch, with the Sync attributes
-       (gated on invokedVia === Invocation::Sync)
+    -> same handler path as Dispatch, driven by the same flags
 ```
