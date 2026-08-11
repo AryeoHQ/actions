@@ -51,7 +51,10 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
             $result = (new DetectsInterruption(app()))->send(
                 $command
             )->through(
-                $command->middleware
+                array_merge(
+                    method_exists($command, 'middleware') ? $command->middleware() : [],
+                    $command->middleware ?? []
+                )
             )->then(
                 fn ($command) => $this->decorated->dispatchNow($command, $handler)
             );

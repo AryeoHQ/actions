@@ -13,7 +13,8 @@ use Tests\Fixtures\Support\Orders\Actions\WithFailed;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedAndMiddleware;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedAndSucceeded;
 use Tests\Fixtures\Support\Orders\Actions\WithFailedThatThrows;
-use Tests\Fixtures\Support\Orders\Actions\WithMiddleware;
+use Tests\Fixtures\Support\Orders\Actions\WithMiddlewareMethod;
+use Tests\Fixtures\Support\Orders\Actions\WithMiddlewareProperty;
 use Tests\Fixtures\Support\Orders\Actions\WithRelease;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceeded;
 use Tests\Fixtures\Support\Orders\Actions\WithSucceededAndMiddleware;
@@ -97,7 +98,17 @@ trait HasLifecycleTestCases
     {
         $order = Order::factory()->make();
 
-        WithMiddleware::make($order)->now();
+        WithMiddlewareProperty::make($order)->now();
+
+        $this->assertContains(WritesToContext::class, Context::get(Action::class));
+    }
+
+    #[Test]
+    public function it_runs_middleware_from_actions_middleware_method_when_now(): void
+    {
+        $order = Order::factory()->make();
+
+        WithMiddlewareMethod::make($order)->now();
 
         $this->assertContains(WritesToContext::class, Context::get(Action::class));
     }
@@ -154,9 +165,9 @@ trait HasLifecycleTestCases
     #[Test]
     public function it_does_not_call_prepare_when_now_faked(): void
     {
-        WithMiddleware::fake();
+        WithMiddlewareProperty::fake();
 
-        WithMiddleware::make(Order::factory()->make())->now();
+        WithMiddlewareProperty::make(Order::factory()->make())->now();
 
         $this->assertEmpty(Context::get(Action::class, []));
     }
@@ -331,7 +342,17 @@ trait HasLifecycleTestCases
     {
         $order = Order::factory()->make();
 
-        WithMiddleware::make($order)->dispatch();
+        WithMiddlewareProperty::make($order)->dispatch();
+
+        $this->assertContains(WritesToContext::class, Context::get(Action::class));
+    }
+
+    #[Test]
+    public function it_runs_middleware_from_actions_middleware_method_when_dispatch(): void
+    {
+        $order = Order::factory()->make();
+
+        WithMiddlewareMethod::make($order)->dispatch();
 
         $this->assertContains(WritesToContext::class, Context::get(Action::class));
     }
@@ -388,9 +409,9 @@ trait HasLifecycleTestCases
     #[Test]
     public function it_does_not_call_prepare_when_dispatch_faked(): void
     {
-        WithMiddleware::fake();
+        WithMiddlewareProperty::fake();
 
-        WithMiddleware::make(Order::factory()->make())->dispatch();
+        WithMiddlewareProperty::make(Order::factory()->make())->dispatch();
 
         $this->assertEmpty(Context::get(Action::class, []));
     }

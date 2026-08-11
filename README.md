@@ -373,7 +373,7 @@ final class ProcessOrder implements Action
 
 The `prepare()` method is called automatically before each dispatch — in `now()`, `dispatch()`, and `dispatchSync()` paths. It provides a clean place to configure middleware that depends on constructor arguments, without cluttering the constructor. For queued dispatches, `prepare()` runs before the job is sent to the queue, and the resulting `$middleware` property serializes with the job.
 
-> **Important:** Actions cannot define a `middleware()` method. This restriction ensures that lifecycle hooks (`succeeded()`, `failed()`) always wrap the full middleware + handle lifecycle consistently across all dispatch paths. Use the `$middleware` property, `prepare()`, or `through()` instead.
+Actions may also define a `middleware()` method, which is merged with `$middleware` on both the sync and queue paths. `middleware()` items run outermost (before `$middleware` items), matching Laravel's own `CallQueuedHandler` behaviour.
 
 ### Middleware Blocking on `now()`
 
