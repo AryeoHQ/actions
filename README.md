@@ -307,20 +307,31 @@ $result = rescue(fn () => ProcessOrder::make($order)->now(), $fallbackValue);
 
 ## Automatic Post-Execution Dispatching
 
-An action can re-dispatch a fresh copy of itself to the queue after it runs. You opt in per call, fluently, on the invocation you want the follow-up for:
+An action can re-dispatch a fresh copy of itself to the queue after it runs. You opt in fluently, on the instance you want the follow-up for:
 
 | Method | Triggers the follow-up dispatch when |
 |---|---|
 | `dispatchAfterSucceeded()` | the run completes successfully |
 | `dispatchAfterFailed()` | the run fails |
 
-The choice is per invocation, not baked into the class — one caller can opt in while another leaves it off. It works the same on every transport (`now()`, `dispatch()`, `dispatchSync()`, any driver).
+The choice is not baked into the class — one instance can opt in while another leaves it off. It works the same on every transport (`now()`, `dispatch()`, `dispatchSync()`, any driver). The re-dispatched copy is standalone, so it does not itself re-dispatch.
 
 ```php
 ProcessOrder::make($order)->dispatchAfterSucceeded()->now();
 
 ProcessOrder::make($order)->dispatchAfterFailed()->dispatch();
 ```
+
+These setters flip a flag on the instance and it stays set. So if you reuse the same instance, every later run follows up too — this runs the action twice, so it re-dispatches twice:
+
+```php
+$action = ProcessOrder::make($order)->dispatchAfterSucceeded();
+
+$action->now(); // runs, then re-dispatches
+$action->now(); // still armed, so it re-dispatches again
+```
+
+Make a fresh instance per run if you do not want this. The common `ProcessOrder::make($order)->dispatchAfterSucceeded()->now()` form already does.
 
 The re-dispatch happens **after** the corresponding `succeeded()` / `failed()` lifecycle hook has run, so cleanup or compensation in a hook is guaranteed to complete before the follow-up copy is enqueued.
 
@@ -392,7 +403,38 @@ try {
 
 The exception carries the class-string of the middleware that stopped the chain, so callers can branch on it. The package does not maintain a list of known middleware — any middleware that declines to pass control on (by not calling `$next`) is detected and attributed.
 
-An interruption is not a success and not a failure — it means the action never ran. So neither `succeeded()` nor `failed()` is called, and neither `#[DispatchAfterSyncSucceeded]` nor `#[DispatchAfterSyncFailed]` fires. The `Interrupted` exception propagates to the caller, who decides what to do next (for example, catch it and `dispatch()` the action to the queue, where the middleware can release and retry).
+An interruption is not a success and not a failure — it means the action never ran. So neither `succeeded()` nor `failed()` is called, and no post-execution dispatch (`dispatchAfterSucceeded()` / `dispatchAfterFailed()`) fires. The `Interrupted` exception propagates to the caller, who decides what to do next (for example, catch it and `dispatch()` the action to the queue, where the middleware can release and retry).
+
+### Unique Actions on `now()`
+
+An action that implements `ShouldBeUnique` will not run while another copy of itself is already running. On the queue, Laravel drops the duplicate silently. On `now()` a caller is waiting on the return value, so the package throws a `Prevented` exception instead of silently returning null:
+
+```php
+use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Support\Actions\Bus\Exceptions\Prevented;
+
+final class ProcessOrder implements Action, ShouldBeUnique
+{
+    use AsAction;
+
+    public function uniqueId(): string
+    {
+        return (string) $this->order->id;
+    }
+
+    // ...
+}
+
+try {
+    ProcessOrder::make($order)->now();
+} catch (Prevented $e) {
+    $e->action; // The action class-string, e.g. ProcessOrder::class
+}
+```
+
+Like an interruption, a prevented run never happened: `handle()` is not called, no hook runs, and nothing is re-dispatched. The lock is held only for the duration of the run and released when it ends, so a later `now()` for the same key runs normally.
+
+`uniqueId`, `uniqueFor`, and `uniqueVia` work exactly as they do on the queue. `ShouldBeUniqueUntilProcessing` is also honored, releasing the lock as soon as the run starts rather than when it ends — matching Laravel's queue behaviour.
 
 ## Static Analysis
 

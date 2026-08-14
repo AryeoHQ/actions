@@ -27,7 +27,7 @@ final class Interrupted extends RuntimeException
         $this->action = $action;
         $this->middleware = $middleware;
 
-        parent::__construct("The [{$action}] operation was interrupted by the [{$middleware}] middleware.");
+        parent::__construct('The ['.class_basename($action).'] operation was interrupted by the ['.class_basename($middleware).'] middleware.');
     }
 
     /**

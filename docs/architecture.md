@@ -101,13 +101,25 @@ Lifecycle preparation and the re-dispatch flags are owned in this trait.
 - Non-actions pass directly through.
 - Re-entry guard: if `$command->job` is already set, dispatch passes through directly (queued executions arrive here through the framework `CallQueuedHandler` with a job set; their lifecycle belongs to `Queue\CallQueuedHandler`).
 - Otherwise the decorator owns the full lifecycle:
-  - `initialize()` is called; a `standalone()` clone (job + chain + flags detached) is captured for potential re-dispatch.
-  - A `DetectsInterruption` pipeline (subclass of `Illuminate\Pipeline\Pipeline`) executes through command middleware. It composes around `Pipeline::carry()` to wrap each pipe, without reimplementing any pipe-invocation mechanics.
+  - `initialize()` is called. Then, if the action is a `ShouldBeUnique`, the unique lock is acquired (see [Unique lock on `now()`](#unique-lock-on-now)). A `standalone()` clone (job + chain + flags detached) is captured for potential re-dispatch.
+  - A `DetectsInterruption` pipeline (subclass of `Illuminate\Pipeline\Pipeline`) executes through command middleware. It composes around `Pipeline::carry()` to wrap each pipe, without reimplementing any pipe-invocation mechanics. The unique lock is released the instant this pipeline ends (success or throw) — before the terminal hook and any re-dispatch.
   - On success: `succeeded()` runs (when the method exists and the job is not failed/released — `fail()` + continue and `release()` are not successes), then re-dispatch if `$dispatchesAfterSucceeded`.
   - On exception: `failed(Throwable)` runs (when the method exists), then re-dispatch if `$dispatchesAfterFailed`, then the original exception rethrows.
   - `Interrupted` is caught first and rethrown untouched: an interruption is neither a success nor a failure — the action never ran — so neither hook nor re-dispatch fires.
   - `finally` clears the job.
   - Hook and re-dispatch failures are wrapped in `rescue(..., report: true)` so they never replace the original outcome.
+
+#### Unique lock on `now()`
+
+`ShouldBeUnique` is honored on the `now()` path, matching the async `dispatch()` path (where the framework acquires the lock in `PendingDispatch`). Bare `dispatchNow` skips that, so the decorator adds it:
+
+- The lock is acquired via `UniqueLock::acquire($command)` after `initialize()` and before the re-dispatch snapshot. Acquiring reads `uniqueId`, which memoizes it onto the instance, so the snapshot (and any re-dispatched copy) carries the same identity rather than generating a new one.
+- If the lock is already held, a `Bus\Exceptions\Prevented` is thrown and `handle()` never runs. The sync caller waits on a return value, so a violation surfaces as a throw rather than a silent null. (Compare `Interrupted`, thrown when *middleware* stops a `now()` run; `Prevented` is thrown when a *dispatch-time gate* stops it.)
+- Release timing follows the contract, matching the framework's queue handler:
+  - Plain `ShouldBeUnique`: the lock is released after `handle()` ends — on success and on a throw.
+  - `ShouldBeUniqueUntilProcessing`: the lock is released at the seam — after the middleware, before `handle()` — because uniqueness ends when work starts. On `now()` this is a weaker guard than plain unique: two overlapping `now()` runs (separate processes/requests/workers sharing one cache) can both execute `handle()`, since the first releases before its `handle()`. The release is idempotent (guarded by a flag) so the after-`handle()` fallback never frees a second run's freshly acquired lock.
+  - In both cases the release happens **before** the terminal hook and any re-dispatch, so a re-dispatched copy can acquire the same key without self-blocking. This mirrors the queue path, which releases before it re-dispatches.
+- `uniqueFor` / `uniqueVia` are honored as-is, since `UniqueLock` reads them.
 
 ### `dispatch()` path
 
@@ -184,11 +196,15 @@ Sync (`->now()`):
   Nowable::now()
     -> Dispatcher::dispatchNow()
       -> initialize()
+      -> if ShouldBeUnique: acquire unique lock (throw Prevented if held)
       -> DetectsInterruption pipeline through command middleware
-      -> decorated dispatchNow()
+         -> if ShouldBeUniqueUntilProcessing: release unique lock (seam, before handle())
+      -> decorated dispatchNow()  [handle()]
+      -> finally (inner): release unique lock if not already released  [before hooks + re-dispatch]
       -> success: succeeded() -> re-dispatch if $dispatchesAfterSucceeded
       -> failure: failed($e) -> re-dispatch if $dispatchesAfterFailed -> rethrow
       -> Interrupted: rethrow (no hooks, no re-dispatch)
+      -> Prevented: rethrow (handle() never ran, no hooks, no re-dispatch)
       -> finally clearJob()
 
 Dispatch (`->dispatch()`):
