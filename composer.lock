@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "eef0f2bcad526f264cfbce4422ed3016",
+    "content-hash": "971dc959fa174f51645a3094a5551463",
     "packages": [
         {
             "name": "aryeo/tooling-laravel",
