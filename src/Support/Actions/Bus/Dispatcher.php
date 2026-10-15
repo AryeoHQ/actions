@@ -166,6 +166,28 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
         return $this->decorated->dispatchSync($command, $handler);
     }
 
+    /**
+     * @param  mixed  $command
+     * @param  mixed  $handler
+     */
+    public function dispatchAfterResponse($command, $handler = null): void
+    {
+        when(
+            $command instanceof Action,
+            fn () => $command->initialize()
+        );
+
+        $this->decorated->dispatchAfterResponse($command, $handler); // @phpstan-ignore staticMethod.dynamicCall (added to the contract in Laravel 13)
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<array-key, mixed>|array<mixed>|null  $jobs
+     */
+    public function chain($jobs = null): mixed
+    {
+        return $this->decorated->chain($jobs); // @phpstan-ignore staticMethod.dynamicCall (added to the contract in Laravel 13)
+    }
+
     private function succeeded(Action $command, Action $dispatchable): void
     {
         if ($command->failedOrReleased) {
