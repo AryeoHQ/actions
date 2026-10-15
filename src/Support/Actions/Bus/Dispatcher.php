@@ -177,7 +177,7 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
             fn () => $command->initialize()
         );
 
-        $this->__call('dispatchAfterResponse', [$command, $handler]);
+        $this->decorated->dispatchAfterResponse($command, $handler); // @phpstan-ignore staticMethod.dynamicCall (added to the contract in Laravel 13)
     }
 
     /**
@@ -185,7 +185,7 @@ class Dispatcher implements \Illuminate\Contracts\Bus\QueueingDispatcher
      */
     public function chain($jobs = null): mixed
     {
-        return $this->__call('chain', [$jobs]);
+        return $this->decorated->chain($jobs); // @phpstan-ignore staticMethod.dynamicCall (added to the contract in Laravel 13)
     }
 
     private function succeeded(Action $command, Action $dispatchable): void
