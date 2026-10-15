@@ -75,6 +75,19 @@ class DispatcherTest extends TestCase
     }
 
     #[Test]
+    public function it_forwards_dispatch_after_response_and_chain(): void
+    {
+        $dispatcher = $this->app->make(Dispatcher::class);
+
+        $dispatcher->dispatchAfterResponse(new NonAction);
+
+        $this->assertInstanceOf(
+            \Illuminate\Foundation\Bus\PendingChain::class,
+            $dispatcher->chain([new NonActionQueueable])
+        );
+    }
+
+    #[Test]
     public function it_does_not_call_prepare_for_non_actions(): void
     {
         $job = new NonActionQueueable;
